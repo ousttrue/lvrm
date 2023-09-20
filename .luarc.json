@@ -1,0 +1,13 @@
+{
+    "runtime.version": "LuaJIT",
+    "runtime.special": {
+        "love.filesystem.load": "loadfile"
+    },
+    "workspace.library": [
+        "${3rd}/love2d/library"
+    ],
+    "format.defaultConfig": {
+        "indent_style": "space",
+        "indent_size": "2",
+    },
+}
