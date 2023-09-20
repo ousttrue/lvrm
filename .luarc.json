@@ -6,8 +6,13 @@
     "workspace.library": [
         "${3rd}/love2d/library"
     ],
+    "format.enable": false,
     "format.defaultConfig": {
         "indent_style": "space",
-        "indent_size": "2",
+        "indent_size": "2"
     },
+    "diagnostics.disable": [
+        "unused-local",
+        "unused-vararg"
+    ]
 }
