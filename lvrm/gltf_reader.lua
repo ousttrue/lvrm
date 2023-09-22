@@ -1,7 +1,5 @@
 local M = {}
 
-local json = require "json"
-
 ---@class BytesReader
 ---@operator call: BytesReader
 ---@field data string
@@ -28,12 +26,10 @@ setmetatable(BytesReader, {
   ---@param bytes string
   ---@return BytesReader
   __call = function(self, bytes)
-    local instance = {
+    return setmetatable({
       data = bytes,
       pos = 1,
-    }
-    setmetatable(instance, { __index = self })
-    return instance
+    }, { __index = self })
   end,
 })
 
@@ -57,6 +53,7 @@ setmetatable(M.GltfReader, {
   ---@param bin_chunk string?
   ---@return GltfReader
   __call = function(self, json_chunk, bin_chunk)
+    local json = require "json"
     local instance = {
       root = json.decode(json_chunk),
       bin = bin_chunk,
@@ -74,7 +71,7 @@ local BIN_CHUNK_TYPE = "BIN\0"
 --- https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html
 ---@param bytes string
 ---@return GltfReader?
-function M.load_from_bytes(bytes)
+function M.read_from_bytes(bytes)
   local r = BytesReader(bytes)
   if r:read(4) == GLB_MAGIC then
     -- glb
@@ -103,27 +100,6 @@ function M.load_from_bytes(bytes)
     -- gltf
     return M.GltfReader(bytes)
   end
-end
-
----@param path string?
----@return GltfReader?
-function M.load_from_path(path)
-  if not path then
-    return
-  end
-
-  local r = io.open(path, "rb")
-  if not r then
-    return
-  end
-
-  local contents = r:read "*a"
-  r:close()
-  if not contents then
-    return
-  end
-
-  return M.load_from_bytes(contents)
 end
 
 return M

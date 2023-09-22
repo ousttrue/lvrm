@@ -10,15 +10,25 @@ package.cpath = string.format("%s;%s/?.%s", package.cpath, lib_path, extension)
 
 local imgui = require "cimgui" -- cimgui is the folder containing the Lua module (the "src" folder in the github repository)
 
-local lvrm = require "lvrm"
+local gltf_reader = require "lvrm.gltf_reader"
 local STATE = {}
 
-love.load = function(args)
-  local r = io.open("C:/Windows/Fonts/meiryo.ttc", "rb")
+---@param path string
+---@return string?
+local function readfile(path)
+  local r = io.open(path, "rb")
   if r then
-    local data = love.data.newByteData(r:read "*a")
+    local data = r:read "*a"
     r:close()
-    local font = love.graphics.newFont(data, 32)
+    return data
+  end
+end
+
+-- love.data.newByteData()
+love.load = function(args)
+  local data = readfile "C:/Windows/Fonts/meiryo.ttc"
+  if data then
+    local font = love.graphics.newFont(love.data.newByteData(data), 32)
     if font then
       love.graphics.setFont(font)
     end
@@ -26,7 +36,7 @@ love.load = function(args)
 
   imgui.love.Init() -- or imgui.love.Init("RGBA32") or imgui.love.Init("Alpha8")
 
-  STATE.model = lvrm.load_from_path(args[1])
+  STATE.model = gltf_reader.read_from_bytes(readfile(args[1]))
   local root = STATE.model.root
   if root then
     if root.textures then
