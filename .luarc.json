@@ -4,7 +4,9 @@
         "love.filesystem.load": "loadfile"
     },
     "workspace.library": [
-        "${3rd}/love2d/library"
+        "local/gltf/library",
+        "${3rd}/love2d/library",
+        "local/cimgui/library",
     ],
     "format.enable": false,
     "format.defaultConfig": {

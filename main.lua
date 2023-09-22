@@ -8,9 +8,12 @@ local lib_path = love.filesystem.getSaveDirectory() .. "/libraries"
 local extension = jit.os == "Windows" and "dll" or jit.os == "Linux" and "so" or jit.os == "OSX" and "dylib"
 package.cpath = string.format("%s;%s/?.%s", package.cpath, lib_path, extension)
 
+---@class cimgui
 local imgui = require "cimgui" -- cimgui is the folder containing the Lua module (the "src" folder in the github repository)
 
-local gltf_reader = require "lvrm.gltf_reader"
+local lvrm_reader = require "lvrm.gltf_reader"
+local LvrmMesh = require "lvrm.mesh"
+
 local STATE = {}
 
 ---@param path string
@@ -36,25 +39,60 @@ love.load = function(args)
 
   imgui.love.Init() -- or imgui.love.Init("RGBA32") or imgui.love.Init("Alpha8")
 
-  STATE.model = gltf_reader.read_from_bytes(readfile(args[1]))
+  STATE.model = lvrm_reader.read_from_bytes(readfile(args[1]))
   local root = STATE.model.root
   if root then
-    if root.textures then
-      for _, texture in ipairs(root.textures) do
-        local image = root.images[texture.source + 1] -- 0origin
-        local view = root.bufferViews[image.bufferView + 1] -- 0origin
-        -- local bytes = root.bi
-      end
-    end
-
     if root.meshes then
       for _, mesh in ipairs(root.meshes) do
+        local lmesh = LvrmMesh()
         for _, prim in ipairs(mesh.primitives) do
-          -- prim.attributes.
+          -- local data = STATE.model:read_accessor_bytes(prim.attributes.POSITION)
         end
       end
     end
   end
+end
+
+---@param jsonpath string
+---@param prop string
+---@param node boolean|string|table
+local function Traverse(jsonpath, prop, node)
+  local node_open = false
+  if prop then
+    node_open = imgui.TreeNodeEx_StrStr(jsonpath, 0, "%s", prop)
+  end
+
+  if prop == nil or node_open then
+    local t = type(node)
+    if t == "table" then
+      if node[1] then
+        -- array
+        for i, v in ipairs(node) do
+          local child_prop = string.format("%d", i)
+          local child_jsonpath = jsonpath .. "." .. child_prop
+          Traverse(child_jsonpath, child_prop, v)
+        end
+      else
+        -- dict
+        for child_prop, v in pairs(node) do
+          local child_jsonpath = jsonpath .. "." .. child_prop
+          Traverse(child_jsonpath, child_prop, v)
+        end
+      end
+    end
+  end
+
+  if node_open then
+    imgui.TreePop()
+  end
+end
+
+local function ShowTree()
+  imgui.Begin "glTF"
+  if STATE.model then
+    Traverse("", nil, STATE.model.root)
+  end
+  imgui.End()
 end
 
 love.draw = function()
@@ -64,6 +102,13 @@ love.draw = function()
 
   -- example window
   imgui.ShowDemoWindow()
+
+  -- TODO: JsonTree
+  if STATE.model then
+    ShowTree(STATE.model.root)
+  end
+
+  -- TODO: 3D View
 
   -- code to render imgui
   imgui.Render()

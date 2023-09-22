@@ -35,7 +35,7 @@ setmetatable(BytesReader, {
 
 ---@class GltfReader
 ---@operator call: GltfReader
----@field root table
+---@field root Gltf
 ---@field bin string? glb bin_chunk
 M.GltfReader = {}
 ---@return string
