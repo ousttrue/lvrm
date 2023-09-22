@@ -36,32 +36,32 @@ setmetatable(BytesReader, {
   end,
 })
 
----@class Gltf
----@operator call: Gltf
----@field root table
----@field bin string? glb bin_chunk
-M.Gltf = {}
----@return string
-function M.Gltf:tostring()
-  if self.bin then
-    return string.format "<glb>"
-  else
-    return string.format "<gltf>"
-  end
-end
-
-setmetatable(M.Gltf, {
-  ---@param json_chunk string
-  ---@param bin_chunk string?
-  __call = function(self, json_chunk, bin_chunk)
-    local instance = {
-      root = json.decode(json_chunk),
-      bin = bin_chunk,
-    }
-    setmetatable(instance, { __index = M.Gltf })
-    return instance
-  end,
-})
+-- ---@class Gltf
+-- ---@operator call: Gltf
+-- ---@field root table
+-- ---@field bin string? glb bin_chunk
+-- M.Gltf = {}
+-- ---@return string
+-- function M.Gltf:tostring()
+--   if self.bin then
+--     return string.format "<glb>"
+--   else
+--     return string.format "<gltf>"
+--   end
+-- end
+--
+-- setmetatable(M.Gltf, {
+--   ---@param json_chunk string
+--   ---@param bin_chunk string?
+--   __call = function(self, json_chunk, bin_chunk)
+--     local instance = {
+--       root = json.decode(json_chunk),
+--       bin = bin_chunk,
+--     }
+--     setmetatable(instance, { __index = M.Gltf })
+--     return instance
+--   end,
+-- })
 
 local GLB_MAGIC = "glTF"
 local GLB_VERSION = 2
