@@ -24,6 +24,7 @@ function BytesReader:uint32()
 end
 
 setmetatable(BytesReader, {
+  ---@param self BytesReader
   ---@param bytes string
   ---@return BytesReader
   __call = function(self, bytes)
@@ -31,37 +32,39 @@ setmetatable(BytesReader, {
       data = bytes,
       pos = 1,
     }
-    setmetatable(instance, { __index = BytesReader })
+    setmetatable(instance, { __index = self })
     return instance
   end,
 })
 
--- ---@class Gltf
--- ---@operator call: Gltf
--- ---@field root table
--- ---@field bin string? glb bin_chunk
--- M.Gltf = {}
--- ---@return string
--- function M.Gltf:tostring()
---   if self.bin then
---     return string.format "<glb>"
---   else
---     return string.format "<gltf>"
---   end
--- end
---
--- setmetatable(M.Gltf, {
---   ---@param json_chunk string
---   ---@param bin_chunk string?
---   __call = function(self, json_chunk, bin_chunk)
---     local instance = {
---       root = json.decode(json_chunk),
---       bin = bin_chunk,
---     }
---     setmetatable(instance, { __index = M.Gltf })
---     return instance
---   end,
--- })
+---@class GltfReader
+---@operator call: GltfReader
+---@field root table
+---@field bin string? glb bin_chunk
+M.GltfReader = {}
+---@return string
+function M.GltfReader:tostring()
+  if self.bin then
+    return "<glb>"
+  else
+    return "<gltf>"
+  end
+end
+
+setmetatable(M.GltfReader, {
+  ---@param self GltfReader
+  ---@param json_chunk string
+  ---@param bin_chunk string?
+  ---@return GltfReader
+  __call = function(self, json_chunk, bin_chunk)
+    local instance = {
+      root = json.decode(json_chunk),
+      bin = bin_chunk,
+    }
+    setmetatable(instance, { __index = self })
+    return instance
+  end,
+})
 
 local GLB_MAGIC = "glTF"
 local GLB_VERSION = 2
@@ -70,7 +73,7 @@ local BIN_CHUNK_TYPE = "BIN\0"
 
 --- https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html
 ---@param bytes string
----@return Gltf?
+---@return GltfReader?
 function M.load_from_bytes(bytes)
   local r = BytesReader(bytes)
   if r:read(4) == GLB_MAGIC then
@@ -95,15 +98,15 @@ function M.load_from_bytes(bytes)
         assert(false, "unknown chunk_type: ", chunk_type)
       end
     end
-    return M.Gltf(json_chunk, bin_chunk)
+    return M.GltfReader(json_chunk, bin_chunk)
   else
     -- gltf
-    return M.Gltf(bytes)
+    return M.GltfReader(bytes)
   end
 end
 
 ---@param path string?
----@return Gltf?
+---@return GltfReader?
 function M.load_from_path(path)
   if not path then
     return

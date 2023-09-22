@@ -131,9 +131,9 @@ local GltfAccessor_Type = {
 ---@field buffers GltfBuffer[]
 ---@field bufferViews GltfBufferView[]
 ---@field accessors GltfAccessor[]
+---@field images GltfImage[]?
+---@field samplers GltfSampler[]?
+---@field textures GltfTexture[]?
+---@field materials GltfMaterial[]
 ---@field meshes GltfMesh[]
 ---@field nodes GltfNode[]
----@field materials GltfMaterial[]
----@field textures GltfTexture[]
----@field samplers GltfSampler[]
----@field images GltfImage[]

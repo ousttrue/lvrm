@@ -27,17 +27,21 @@ love.load = function(args)
   imgui.love.Init() -- or imgui.love.Init("RGBA32") or imgui.love.Init("Alpha8")
 
   STATE.model = lvrm.load_from_path(args[1])
-  local root = STATE.model
+  local root = STATE.model.root
   if root then
-    for _, texture in ipairs(root.textures) do
-      local image = root.images[texture.source + 1] -- 0origin
-      local view = root.bufferViews[image.bufferView + 1] -- 0origin
-      -- local bytes = root.bi
+    if root.textures then
+      for _, texture in ipairs(root.textures) do
+        local image = root.images[texture.source + 1] -- 0origin
+        local view = root.bufferViews[image.bufferView + 1] -- 0origin
+        -- local bytes = root.bi
+      end
     end
 
-    for _, mesh in ipairs(root.meshes) do
-      for _, prim in ipairs(mesh.primitives) do
-        -- prim.attributes.
+    if root.meshes then
+      for _, mesh in ipairs(root.meshes) do
+        for _, prim in ipairs(mesh.primitives) do
+          -- prim.attributes.
+        end
       end
     end
   end
@@ -45,7 +49,7 @@ end
 
 love.draw = function()
   if STATE.model then
-    love.graphics.print(STATE.model, 400, 300)
+    love.graphics.print(STATE.model:tostring(), 400, 300)
   end
 
   -- example window
