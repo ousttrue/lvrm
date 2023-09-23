@@ -1,4 +1,5 @@
 local bit = require "bit"
+local imgui = require "cimgui"
 
 ---@class cimgui
 local imgui = require "cimgui" -- cimgui is the folder containing the Lua module (the "src" folder in the github repository)
@@ -103,6 +104,44 @@ function M.ShowTree(root, title)
   end
 
   imgui.End()
+end
+
+---@param name string
+---@return integer width
+---@return integer height
+function M.BeginDockspace(name)
+  local dockspace_flags = imgui.love.DockNodeFlags "PassthruCentralNode"
+
+  local viewport = imgui.GetMainViewport()
+  imgui.SetNextWindowPos(viewport.WorkPos)
+  imgui.SetNextWindowSize(viewport.WorkSize)
+  imgui.SetNextWindowViewport(viewport.ID)
+  imgui.PushStyleVar_Float(imgui.ImGuiStyleVar_WindowRounding, 0)
+  imgui.PushStyleVar_Float(imgui.ImGuiStyleVar_WindowBorderSize, 0)
+
+  local window_flags = imgui.love.WindowFlags(
+    "NoDocking",
+    "NoTitleBar",
+    "NoCollapse",
+    "NoResize",
+    "NoMove",
+    "NoBringToFrontOnFocus",
+    "NoNavFocus",
+    "NoBackground",
+    "MenuBar"
+  )
+
+  imgui.PushStyleVar_Vec2(imgui.ImGuiStyleVar_WindowPadding, { 0, 0 })
+  imgui.Begin(name, nil, window_flags)
+  imgui.PopStyleVar()
+  imgui.PopStyleVar(2)
+
+  local size = imgui.GetContentRegionAvail()
+
+  local dockspace_id = imgui.GetID_Str(name)
+  imgui.DockSpace(dockspace_id, { 0.0, 0.0 }, dockspace_flags)
+
+  return size.x, size.y
 end
 
 return M

@@ -52,10 +52,8 @@ end
 function Camera:dolly(d)
   if d > 0 then
     self.z = self.z * 0.9
-    self:calc_matrix()
   elseif d < 0 then
     self.z = self.z * 1.1
-    self:calc_matrix()
   end
 end
 
@@ -66,16 +64,14 @@ local FACTOR = 0.01
 function Camera:yawpitch(dx, dy)
   self.yaw = self.yaw + dx * FACTOR
   self.pitch = self.pitch - dy * FACTOR
-  self:calc_matrix()
 end
 
 ---@param dx integer mouse delta x
 ---@param dy integer mouse delta y
 function Camera:shift(dx, dy)
-  local t = math.tan(self.fovy / 2)
-  self.x = self.x - (dx / self.screen_height / 2) * t * self.z
-  self.y = self.y + (dy / self.screen_height / 2) * t * self.z
-  self:calc_matrix()
+  local t = math.tan(self.fovy)
+  self.x = self.x - (dx / self.screen_height) * t * self.z * 2
+  self.y = self.y + (dy / self.screen_height) * t * self.z * 2
 end
 
 return Camera

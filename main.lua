@@ -1,5 +1,18 @@
+local STATE = {
+  ---@type fun()[]
+  docks = {},
+}
+
+---@class cimgui
+local imgui = require "cimgui"
+
 if os.getenv "LOCAL_LUA_DEBUGGER_VSCODE" == "1" then
   require("lldebugger").start()
+
+  table.insert(STATE.docks, function()
+    -- example window
+    imgui.ShowDemoWindow()
+  end)
 end
 
 -- Make sure the shared library can be found through package.cpath before loading the module.
@@ -8,17 +21,12 @@ local lib_path = love.filesystem.getSaveDirectory() .. "/libraries"
 local extension = jit.os == "Windows" and "dll" or jit.os == "Linux" and "so" or jit.os == "OSX" and "dylib"
 package.cpath = string.format("%s;%s/?.%s", package.cpath, lib_path, extension)
 
----@class cimgui
-local imgui = require "cimgui"
-
 local lvrm_reader = require "lvrm.gltf_reader"
 local lvrm_ui = require "lvrm.ui"
 local Scene = require "lvrm.scene"
 local Camera = require "lvrm.camera"
 
-local STATE = {
-  camera = Camera.new(),
-}
+STATE.camera = Camera.new()
 
 ---@param path string?
 ---@return string?
@@ -38,6 +46,10 @@ end
 love.load = function(args)
   imgui.love.Init() -- or imgui.love.Init("RGBA32") or imgui.love.Init("Alpha8")
 
+  local io = imgui.GetIO()
+  -- Enable Docking
+  io.ConfigFlags = bit.bor(io.ConfigFlags, imgui.ImGuiConfigFlags_DockingEnable)
+
   local data = readfile "C:/Windows/Fonts/meiryo.ttc"
   if data then
     local font = love.graphics.newFont(love.data.newByteData(data), 32)
@@ -54,6 +66,12 @@ love.load = function(args)
       STATE.scene = Scene.load(model)
     end
   end
+
+  table.insert(STATE.docks, function()
+    if STATE.json_root then
+      lvrm_ui.ShowTree(STATE.json_root, "glTF")
+    end
+  end)
 end
 
 love.draw = function()
@@ -61,11 +79,13 @@ love.draw = function()
     STATE.scene:draw(STATE.camera.view, STATE.camera.projection)
   end
 
-  -- example window
-  imgui.ShowDemoWindow()
+  local w, h = lvrm_ui.BeginDockspace "DOCKSPACE"
+  STATE.camera.screen_width = w
+  STATE.camera.screen_height = h
+  STATE.camera:calc_matrix()
 
-  if STATE.json_root then
-    lvrm_ui.ShowTree(STATE.json_root, "glTF")
+  for _, d in ipairs(STATE.docks) do
+    d()
   end
 
   -- code to render imgui
