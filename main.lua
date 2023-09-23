@@ -83,9 +83,20 @@ love.mousemoved = function(x, y, ...)
   if not imgui.love.GetWantCaptureMouse() then
     -- your code here
     local io = imgui.GetIO()
-    local v =io.MouseDown[imgui.ImGuiMouseButton_Middle]
+    local is_ctrl = imgui.IsKeyDown(imgui.ImGuiKey_LeftCtrl) or imgui.IsKeyDown(imgui.ImGuiKey_RightCtrl)
+    if io.MouseDown[imgui.ImGuiMouseButton_Right] then
+      if is_ctrl then
+        STATE.camera:dolly(-io.MouseDelta.y)
+      else
+        STATE.camera:yawpitch(io.MouseDelta.x, io.MouseDelta.y)
+      end
+    end
     if io.MouseDown[imgui.ImGuiMouseButton_Middle] then
-      STATE.camera:shift(io.MouseDelta.x, io.MouseDelta.y)
+      if is_ctrl then
+        STATE.camera:dolly(-io.MouseDelta.y)
+      else
+        STATE.camera:shift(io.MouseDelta.x, io.MouseDelta.y)
+      end
     end
   end
 end

@@ -4,6 +4,8 @@ local falg = require "falg"
 ---@field x number
 ---@field y number
 ---@field z number
+---@field yaw number
+---@field pitch number
 ---@field view falg.Mat4
 ---@field screen_width integer
 ---@field screen_height integer
@@ -21,6 +23,8 @@ function Camera.new()
     x = 0,
     y = 0,
     z = -5,
+    yaw = 0,
+    pitch = 0,
     view = falg.Mat4.new():identity(),
     -- projection
     screen_width = 100,
@@ -35,7 +39,12 @@ function Camera.new()
 end
 
 function Camera:calc_matrix()
+  -- self.view:identity()
+  local yaw = falg.Mat4.new():rotation_y(self.yaw)
+  local pitch = falg.Mat4.new():rotation_x(self.pitch)
+  self.view:set(pitch * yaw)
   self.view:translation(self.x, self.y, self.z)
+
   self.projection:perspective(self.fovy, self.screen_width / self.screen_height, self.znear, self.zfar)
 end
 
@@ -48,6 +57,16 @@ function Camera:dolly(d)
     self.z = self.z * 1.1
     self:calc_matrix()
   end
+end
+
+local FACTOR = 0.01
+
+---@param dx integer mouse delta x
+---@param dy integer mouse delta y
+function Camera:yawpitch(dx, dy)
+  self.yaw = self.yaw + dx * FACTOR
+  self.pitch = self.pitch - dy * FACTOR
+  self:calc_matrix()
 end
 
 ---@param dx integer mouse delta x
