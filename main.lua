@@ -17,7 +17,9 @@ local lvrm_reader = require "lvrm.gltf_reader"
 local lvrm_ui = require "lvrm.ui"
 local LvrmScene = require "lvrm.scene"
 
-local STATE = {}
+local STATE = {
+  scene = LvrmScene(),
+}
 
 ---@param path string?
 ---@return string?
@@ -47,9 +49,10 @@ love.load = function(args)
 
   data = readfile(args[1])
   if data then
-    STATE.model = lvrm_reader.read_from_bytes(data)
-    if STATE.model then
-      STATE.scene = LvrmScene:Load(STATE.model)
+    local model = lvrm_reader.read_from_bytes(data)
+    if model then
+      STATE.json_root = model.root
+      STATE.scene = LvrmScene:Load(model)
     end
   end
 end
@@ -65,12 +68,9 @@ love.draw = function()
   -- example window
   imgui.ShowDemoWindow()
 
-  -- TODO: JsonTree
-  if STATE.model then
-    lvrm_ui.ShowTree(STATE.model.root, "glTF")
+  if STATE.json_root then
+    lvrm_ui.ShowTree(STATE.json_root, "glTF")
   end
-
-  -- TODO: 3D View
 
   -- code to render imgui
   imgui.Render()
