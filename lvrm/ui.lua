@@ -1,3 +1,5 @@
+local bit = require "bit"
+
 ---@class cimgui
 local imgui = require "cimgui" -- cimgui is the folder containing the Lua module (the "src" folder in the github repository)
 

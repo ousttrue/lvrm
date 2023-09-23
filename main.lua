@@ -2,8 +2,6 @@ if os.getenv "LOCAL_LUA_DEBUGGER_VSCODE" == "1" then
   require("lldebugger").start()
 end
 
-local bit = require "bit"
-
 -- Make sure the shared library can be found through package.cpath before loading the module.
 -- For example, if you put it in the LÖVE save directory, you could do something like this:
 local lib_path = love.filesystem.getSaveDirectory() .. "/libraries"
@@ -11,15 +9,13 @@ local extension = jit.os == "Windows" and "dll" or jit.os == "Linux" and "so" or
 package.cpath = string.format("%s;%s/?.%s", package.cpath, lib_path, extension)
 
 ---@class cimgui
-local imgui = require "cimgui" -- cimgui is the folder containing the Lua module (the "src" folder in the github repository)
+local imgui = require "cimgui"
 
 local lvrm_reader = require "lvrm.gltf_reader"
 local lvrm_ui = require "lvrm.ui"
-local LvrmScene = require "lvrm.scene"
+local Scene = require "lvrm.scene"
 
-local STATE = {
-  scene = LvrmScene(),
-}
+local STATE = {}
 
 ---@param path string?
 ---@return string?
@@ -52,15 +48,12 @@ love.load = function(args)
     local model = lvrm_reader.read_from_bytes(data)
     if model then
       STATE.json_root = model.root
-      STATE.scene = LvrmScene:Load(model)
+      STATE.scene = Scene.Load(model)
     end
   end
 end
 
 love.draw = function()
-  -- if STATE.model then
-  --   love.graphics.print(STATE.model:tostring(), 400, 300)
-  -- end
   if STATE.scene then
     STATE.scene:draw()
   end
