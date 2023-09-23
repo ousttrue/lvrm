@@ -1,6 +1,6 @@
-local ffi = require'ffi'
+local ffi = require "ffi"
 
-local Material = require 'lvrm.material'
+local Material = require "lvrm.material"
 
 ---@class lvrm.SubMesh
 ---@field start integer
@@ -28,14 +28,14 @@ local Mesh = {}
 
 function Mesh.new()
   local vertexformat = {
-    {"VertexPosition", "float", 3},
-    {"VertexTexCoord", "float", 2},
-    {"VertexNormal"  , "float", 3},
+    { "VertexPosition", "float", 3 },
+    { "VertexTexCoord", "float", 2 },
+    { "VertexNormal", "float", 3 },
   }
   local vertex_size = 8 * 4
   local data = love.data.newByteData(vertex_size * 3)
 
-  ffi.cdef[[
+  ffi.cdef [[
     typedef struct Float2{
       float X, Y;
     } Float2;
@@ -50,36 +50,35 @@ function Mesh.new()
   ]]
   -- local buffer = ffi.new "Vertex[3]"
   local buffer = ffi.cast("Vertex*", data:getPointer())
-  buffer[0].Position.X=-1
-  buffer[0].Position.Y=-1
-  buffer[1].Position.X=1
-  buffer[1].Position.Y=-1
-  buffer[2].Position.X=0
-  buffer[2].Position.Y=1
+  buffer[0].Position.X = -1
+  buffer[0].Position.Y = -1
+  buffer[1].Position.X = 1
+  buffer[1].Position.Y = -1
+  buffer[2].Position.X = 0
+  buffer[2].Position.Y = 1
 
-  local lg_mesh = love.graphics.newMesh(vertexformat, data, 'triangles', 'static')
+  local lg_mesh = love.graphics.newMesh(vertexformat, data, "triangles", "static")
 
   return setmetatable({
     vertex_buffer = lg_mesh,
     submeshes = {
-      Submesh.new(Material.new(), 1, 3) -- 1 origin !
+      Submesh.new(Material.new(), 1, 3), -- 1 origin !
     },
   }, { __index = Mesh })
 end
 
----@param model love.Data
----@param view love.Data
----@param projection love.Data
+---@param model falg.Mat4
+---@param view falg.Mat4
+---@param projection falg.Mat4
 function Mesh:draw(model, view, projection)
   for _, s in ipairs(self.submeshes) do
     s.material:use()
-    s.material.shader:send('m_model', model, 'column')
-    s.material.shader:send('m_view', view, 'column')
-    s.material.shader:send('m_projection', projection, 'column')
+    s.material.shader:send("m_model", model.data, "column")
+    s.material.shader:send("m_view", view.data, "column")
+    s.material.shader:send("m_projection", projection.data, "column")
     self.vertex_buffer:setDrawRange(s.start, s.drawcount)
     love.graphics.draw(self.vertex_buffer)
   end
-  
 end
 
 return Mesh

@@ -30,10 +30,24 @@ function Mat4.new()
   }, Mat4)
 end
 
----@return falg.Mat4
-function Mat4.new_identity()
-  local m = Mat4.new()
-  m:set_array {
+function Mat4:get_cdata()
+  return ffi.cast("Mat4*", self.data:getFFIPointer())[0] -- ffi is 0 origin
+end
+
+---@param array number[] Must 16 values
+---@return falg.Mat4 self
+function Mat4:set_array(array)
+  assert(#array == 16)
+  local p = self:get_cdata()
+  for i, v in ipairs(array) do
+    p.array[i - 1] = v -- ffi is 0 origin
+  end
+  return self
+end
+
+---@return falg.Mat4 self
+function Mat4:identity()
+  return self:set_array {
     1,
     0,
     0,
@@ -54,16 +68,55 @@ function Mat4.new_identity()
     0,
     1,
   }
-  return m
 end
 
----@param array number[] Must 16 values
-function Mat4:set_array(array)
-  assert(#array == 16)
-  local p = ffi.cast("Mat4*", self.data:getFFIPointer())[0] -- ffi is 0 origin
-  for i, v in ipairs(array) do
-    p.array[i - 1] = v -- ffi is 0 origin
-  end
+---@param b number bottom
+---@param t number top
+---@param l number left
+---@param r number right
+---@param n number near
+---@param f number far
+---@return falg.Mat4 self
+function Mat4:frustum(b, t, l, r, n, f)
+  local p = self:get_cdata()
+  p._11 = 2 * n / (r - l)
+  p._22 = 2 * n / (t - b)
+
+  p._31 = (r + l) / (r - l)
+  p._32 = (t + b) / (t - b)
+  p._33 = -(f + n) / (f - n)
+  p._34 = -1
+
+  p._43 = -2 * f * n / (f - n)
+  return self
+end
+
+---like gluPerspective
+---@param fovy number
+---@param aspectRatio number
+---@param near number
+---@param far number
+---@return falg.Mat4 self
+function Mat4:perspective(fovy, aspectRatio, near, far)
+  local scale = math.tan(fovy) * near
+  local r = aspectRatio * scale
+  local l = -r
+  local t = scale
+  local b = -t
+  return self:frustum(b, t, l, r, near, far)
+end
+
+---Set _41, _42, _43.
+---@param x number
+---@param y number
+---@param z number
+---@return falg.Mat4 self
+function Mat4:translation(x, y, z)
+  local p = self:get_cdata()
+  p._41 = x
+  p._42 = y
+  p._43 = z
+  return self
 end
 
 return {

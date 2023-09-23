@@ -14,8 +14,11 @@ local imgui = require "cimgui"
 local lvrm_reader = require "lvrm.gltf_reader"
 local lvrm_ui = require "lvrm.ui"
 local Scene = require "lvrm.scene"
+local Camera = require "lvrm.camera"
 
-local STATE = {}
+local STATE = {
+  camera = Camera.new(),
+}
 
 ---@param path string?
 ---@return string?
@@ -55,7 +58,7 @@ end
 
 love.draw = function()
   if STATE.scene then
-    STATE.scene:draw()
+    STATE.scene:draw(STATE.camera.view, STATE.camera.projection)
   end
 
   -- example window
@@ -79,6 +82,11 @@ love.mousemoved = function(x, y, ...)
   imgui.love.MouseMoved(x, y)
   if not imgui.love.GetWantCaptureMouse() then
     -- your code here
+    local io = imgui.GetIO()
+    local v =io.MouseDown[imgui.ImGuiMouseButton_Middle]
+    if io.MouseDown[imgui.ImGuiMouseButton_Middle] then
+      STATE.camera:shift(io.MouseDelta.x, io.MouseDelta.y)
+    end
   end
 end
 
@@ -100,6 +108,7 @@ love.wheelmoved = function(x, y)
   imgui.love.WheelMoved(x, y)
   if not imgui.love.GetWantCaptureMouse() then
     -- your code here
+    STATE.camera:dolly(y)
   end
 end
 
