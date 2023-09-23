@@ -51,7 +51,7 @@ love.load = function(args)
     local model = lvrm_reader.read_from_bytes(data)
     if model then
       STATE.json_root = model.root
-      STATE.scene = Scene.Load(model)
+      STATE.scene = Scene.load(model)
     end
   end
 end

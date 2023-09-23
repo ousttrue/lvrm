@@ -2,25 +2,33 @@ local Mesh = require "lvrm.mesh"
 local falg = require "falg"
 local IDENTITY = falg.Mat4.new():identity()
 
----@class lvrm.SceneInstance
----@field meshes lvrm.Mesh[]
-
 ---@class lvrm.Scene: lvrm.SceneInstance
 local Scene = {}
+Scene.__index = Scene
+
 ---@return lvrm.Scene
 function Scene.new()
+  ---@class  lvrm.SceneInstance
   local instance = {
-    meshes = {
-      Mesh:new(),
-    },
+    ---@type lvrm.Mesh[]
+    meshes = {},
   }
-  return setmetatable(instance, { __index = Scene })
+  ---@type lvrm.Scene
+  return setmetatable(instance, Scene)
 end
 
 ---@param reader GltfReader
 ---@return lvrm.Scene
-function Scene.Load(reader)
-  return Scene.new()
+function Scene.load(reader)
+  local scene = Scene.new()
+
+  for _, m in ipairs(reader.root.meshes) do
+    local mesh = Mesh.load(reader, m)
+    -- local mesh = Mesh.new_triangle()
+    table.insert(scene.meshes, mesh)
+  end
+
+  return scene
 end
 
 ---@param view falg.Mat4

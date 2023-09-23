@@ -1,3 +1,4 @@
+require "lvrm.gltf_reader"
 local ffi = require "ffi"
 
 local Material = require "lvrm.material"
@@ -7,9 +8,6 @@ local Material = require "lvrm.material"
 ---@field drawcount integer
 ---@field material lvrm.Material
 
----@class lvrm.MeshInstance
----@field vertex_buffer love.Mesh
----@field submeshes lvrm.SubMesh[]
 local Submesh = {}
 
 ---@param material lvrm.Material
@@ -23,31 +21,51 @@ function Submesh.new(material, start, drawcount)
   }
 end
 
+ffi.cdef [[
+typedef struct {
+  Float3 Position;
+  Float2 TexCoord;
+  Float3 Normal;
+} Vertex;
+]]
+
+local VERTEX_FORMAT = {
+  { "VertexPosition", "float", 3 },
+  { "VertexTexCoord", "float", 2 },
+  { "VertexNormal", "float", 3 },
+}
+local VERTEX_SIZE = ffi.sizeof "Vertex"
+
 ---@class lvrm.Mesh: lvrm.MeshInstance
 local Mesh = {}
+Mesh.__index = Mesh
 
-function Mesh.new()
-  local vertexformat = {
-    { "VertexPosition", "float", 3 },
-    { "VertexTexCoord", "float", 2 },
-    { "VertexNormal", "float", 3 },
+---@param data love.ByteData
+---@param submeshes lvrm.SubMesh[]
+---@param indices {data: love.ByteData, format: "uint16"|"uint32"}?
+---@return lvrm.Mesh
+function Mesh.new(vertexformat, data, submeshes, indices)
+  local lg_mesh = love.graphics.newMesh(vertexformat, data, "triangles", "static")
+  if indices then
+    lg_mesh:setVertexMap(indices.data, indices.format)
+  end
+
+  ---@class lvrm.MeshInstance
+  local instance = {
+    ---@type love.Mesh
+    vertex_buffer = lg_mesh,
+    ---@type lvrm.SubMesh[]
+    submeshes = submeshes,
   }
-  local vertex_size = 8 * 4
-  local data = love.data.newByteData(vertex_size * 3)
 
-  ffi.cdef [[
-    typedef struct Float2{
-      float X, Y;
-    } Float2;
-    typedef struct Float3{
-      float X, Y, Z;      
-    } Float3;
-    typedef struct Vertex{
-      Float3 Position;
-      Float2 TexCoord;
-      Float3 Normal;
-    } Vertex;
-  ]]
+  ---@type lvrm.Mesh
+  return setmetatable(instance, Mesh)
+end
+
+---@return lvrm.Mesh
+function Mesh.new_triangle()
+  local data = love.data.newByteData(VERTEX_SIZE * 3)
+
   -- local buffer = ffi.new "Vertex[3]"
   local buffer = ffi.cast("Vertex*", data:getPointer())
   buffer[0].Position.X = -1
@@ -57,14 +75,70 @@ function Mesh.new()
   buffer[2].Position.X = 0
   buffer[2].Position.Y = 1
 
-  local lg_mesh = love.graphics.newMesh(vertexformat, data, "triangles", "static")
+  return Mesh.new(VERTEX_FORMAT, data, {
+    Submesh.new(Material.new(), 1, 3), -- 1origin
+  })
+end
 
-  return setmetatable({
-    vertex_buffer = lg_mesh,
-    submeshes = {
-      Submesh.new(Material.new(), 1, 3), -- 1 origin !
-    },
-  }, { __index = Mesh })
+---@param r GltfReader
+---@param gltf_mesh gltf.Mesh
+---@return lvrm.Mesh
+function Mesh.load(r, gltf_mesh)
+  local total_vertex_count = 0
+  local total_index_count = 0
+  local submeshes = {}
+  for _, p in ipairs(gltf_mesh.primitives) do
+    local vertex_count = r.root.accessors[p.attributes.POSITION].count -- 1origin
+    local index_count = 0
+
+    if p.indices then
+      index_count = r.root.accessors[p.indices + 1].count -- 1origin
+      table.insert(submeshes, Submesh.new(Material.new(), total_index_count + 1, index_count)) -- 1origin
+    else
+      table.insert(submeshes, Submesh.new(Material.new(), total_vertex_count + 1, vertex_count)) -- 1origin
+    end
+
+    total_vertex_count = total_vertex_count + vertex_count
+    total_index_count = total_index_count + index_count
+  end
+
+  local data = love.data.newByteData(VERTEX_SIZE * total_vertex_count)
+  local p_vertices = ffi.cast("Vertex*", data:getFFIPointer())
+  local indices
+  local p_indices
+  if total_index_count > 0 then
+    indices = {}
+    local index_type = r.root.accessors[gltf_mesh.primitives[1].indices + 1].componentType
+    if index_type == 5123 then
+      indices.format = "uint16"
+      indices.data = love.data.newByteData(2 * total_index_count)
+      p_indices = ffi.cast("unsigned short*", indices.data:getFFIPointer())
+    elseif index_type == 5125 then
+      indices.format = "uint32"
+      indices.data = love.data.newByteData(4 * total_index_count)
+      p_indices = ffi.cast("unsigned int*", indices.data:getFFIPointer())
+    else
+      assert(false, "unknown index type", index_type)
+    end
+  end
+
+  local vertex_offset = 0
+  local index_offset = 0
+  for _, p in ipairs(gltf_mesh.primitives) do
+    local positions_data, v_count = r:read_accessor_bytes(p.attributes.POSITION)
+    for i = 0, v_count - 1 do
+      p_vertices[vertex_offset].Position = positions_data[i]
+      vertex_offset = vertex_offset + 1
+    end
+
+    if p.indices then
+      local indices_data, i_count, i_stride = r:read_accessor_bytes(p.indices)
+      ffi.copy(p_indices + index_offset, indices_data, i_stride * i_count)
+      index_offset = index_offset + i_count
+    end
+  end
+
+  return Mesh.new(VERTEX_FORMAT, data, submeshes, indices)
 end
 
 ---@param model falg.Mat4
