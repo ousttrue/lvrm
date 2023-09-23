@@ -67,9 +67,15 @@ function Mesh.new()
   }, { __index = Mesh })
 end
 
-function Mesh:draw()
+---@param model love.Data
+---@param view love.Data
+---@param projection love.Data
+function Mesh:draw(model, view, projection)
   for _, s in ipairs(self.submeshes) do
     s.material:use()
+    s.material.shader:send('m_model', model, 'column')
+    s.material.shader:send('m_view', view, 'column')
+    s.material.shader:send('m_projection', projection, 'column')
     self.vertex_buffer:setDrawRange(s.start, s.drawcount)
     love.graphics.draw(self.vertex_buffer)
   end
