@@ -1,3 +1,7 @@
+if os.getenv "LOCAL_LUA_DEBUGGER_VSCODE" == "1" then
+  require("lldebugger").start()
+end
+
 package.path = package.cpath
   .. string.format(";%s\\libs\\?.lua;%s\\libs\\?\\init.lua", love.filesystem.getSource(), love.filesystem.getSource())
 
@@ -72,15 +76,6 @@ end
 
 local STATE = State.new()
 
-if os.getenv "LOCAL_LUA_DEBUGGER_VSCODE" == "1" then
-  require("lldebugger").start()
-
-  STATE:add_dock(function()
-    -- example window
-    imgui.ShowDemoWindow()
-  end)
-end
-
 -- love.data.newByteData()
 love.load = function(args)
   imgui.love.Init() -- or imgui.love.Init("RGBA32") or imgui.love.Init("Alpha8")
@@ -110,6 +105,13 @@ love.load = function(args)
       ui.ShowScene(STATE.scene, "scene")
     end
   end)
+
+  if os.getenv "LOCAL_LUA_DEBUGGER_VSCODE" == "1" then
+    STATE:add_dock(function()
+      -- example window
+      imgui.ShowDemoWindow()
+    end)
+  end  
 end
 
 love.draw = function()
