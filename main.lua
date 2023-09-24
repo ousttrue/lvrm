@@ -1,32 +1,12 @@
-local STATE = {
-  ---@type fun()[]
-  docks = {},
-}
-
----@class cimgui
-local imgui = require "cimgui"
-
-if os.getenv "LOCAL_LUA_DEBUGGER_VSCODE" == "1" then
-  require("lldebugger").start()
-
-  table.insert(STATE.docks, function()
-    -- example window
-    imgui.ShowDemoWindow()
-  end)
-end
-
--- Make sure the shared library can be found through package.cpath before loading the module.
--- For example, if you put it in the LÖVE save directory, you could do something like this:
-local lib_path = love.filesystem.getSaveDirectory() .. "/libraries"
-local extension = jit.os == "Windows" and "dll" or jit.os == "Linux" and "so" or jit.os == "OSX" and "dylib"
-package.cpath = string.format("%s;%s/?.%s", package.cpath, lib_path, extension)
+package.path = package.cpath
+  .. string.format(";%s\\libs\\?.lua;%s\\libs\\?\\init.lua", love.filesystem.getSource(), love.filesystem.getSource())
 
 local lvrm_reader = require "lvrm.gltf_reader"
 local lvrm_ui = require "lvrm.ui"
 local Scene = require "lvrm.scene"
 local Camera = require "lvrm.camera"
-
-STATE.camera = Camera.new()
+---@class cimgui
+local imgui = require "cimgui"
 
 ---@param path string?
 ---@return string?
@@ -40,6 +20,65 @@ local function readfile(path)
     r:close()
     return data
   end
+end
+
+---@class State: StateInstance
+local State = {}
+State.__index = State
+
+---@return State
+function State.new()
+  ---@class StateInstance
+  local instance = {
+    camera = Camera.new(),
+    ---@type fun()[]
+    docks = {},
+  }
+  ---@type State
+  return setmetatable(instance, State)
+end
+
+---@param f fun()
+function State:add_dock(f)
+  table.insert(self.docks, f)
+end
+
+---@param path string?
+function State:load(path)
+  local data = readfile(path)
+  if data then
+    local model = lvrm_reader.read_from_bytes(data)
+    if model then
+      self.json_root = model.root
+      self.scene = Scene.load(model)
+    end
+  end
+end
+
+function State:draw()
+  if self.scene then
+    self.scene:draw(self.camera.view, self.camera.projection)
+  end
+
+  local w, h = lvrm_ui.BeginDockspace "DOCKSPACE"
+  self.camera.screen_width = w
+  self.camera.screen_height = h
+  self.camera:calc_matrix()
+
+  for _, d in ipairs(self.docks) do
+    d()
+  end
+end
+
+local STATE = State.new()
+
+if os.getenv "LOCAL_LUA_DEBUGGER_VSCODE" == "1" then
+  require("lldebugger").start()
+
+  STATE:add_dock(function()
+    -- example window
+    imgui.ShowDemoWindow()
+  end)
 end
 
 -- love.data.newByteData()
@@ -58,16 +97,9 @@ love.load = function(args)
     end
   end
 
-  data = readfile(args[1])
-  if data then
-    local model = lvrm_reader.read_from_bytes(data)
-    if model then
-      STATE.json_root = model.root
-      STATE.scene = Scene.load(model)
-    end
-  end
+  STATE:load(args[1])
 
-  table.insert(STATE.docks, function()
+  STATE:add_dock(function()
     if STATE.json_root then
       lvrm_ui.ShowTree(STATE.json_root, "glTF")
     end
@@ -75,18 +107,7 @@ love.load = function(args)
 end
 
 love.draw = function()
-  if STATE.scene then
-    STATE.scene:draw(STATE.camera.view, STATE.camera.projection)
-  end
-
-  local w, h = lvrm_ui.BeginDockspace "DOCKSPACE"
-  STATE.camera.screen_width = w
-  STATE.camera.screen_height = h
-  STATE.camera:calc_matrix()
-
-  for _, d in ipairs(STATE.docks) do
-    d()
-  end
+  STATE:draw()
 
   -- code to render imgui
   imgui.Render()

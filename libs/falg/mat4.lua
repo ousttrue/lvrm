@@ -211,6 +211,4 @@ function Mat4:rotation_z(rad)
   return self
 end
 
-return {
-  Mat4 = Mat4,
-}
+return Mat4

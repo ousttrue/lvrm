@@ -5,8 +5,8 @@
     },
     "workspace.library": [
         "${3rd}/love2d/library",
-        "local/gltf/library",
-        "local/cimgui/library"
+        "meta/gltf/library",
+        "meta/cimgui/library"
     ],
     "format.enable": false,
     "format.defaultConfig": {
