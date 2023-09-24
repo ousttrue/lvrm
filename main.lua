@@ -2,7 +2,7 @@ package.path = package.cpath
   .. string.format(";%s\\libs\\?.lua;%s\\libs\\?\\init.lua", love.filesystem.getSource(), love.filesystem.getSource())
 
 local lvrm_reader = require "lvrm.gltf_reader"
-local lvrm_ui = require "lvrm.ui"
+local ui = require "ui"
 local Scene = require "lvrm.scene"
 local Camera = require "lvrm.camera"
 ---@class cimgui
@@ -60,7 +60,7 @@ function State:draw()
     self.scene:draw(self.camera.view, self.camera.projection)
   end
 
-  local w, h = lvrm_ui.BeginDockspace "DOCKSPACE"
+  local w, h = ui.BeginDockspace "DOCKSPACE"
   self.camera.screen_width = w
   self.camera.screen_height = h
   self.camera:calc_matrix()
@@ -101,7 +101,13 @@ love.load = function(args)
 
   STATE:add_dock(function()
     if STATE.json_root then
-      lvrm_ui.ShowTree(STATE.json_root, "glTF")
+      ui.ShowJson(STATE.json_root, "glTF")
+    end
+  end)
+
+  STATE:add_dock(function()
+    if STATE.scene then
+      ui.ShowScene(STATE.scene, "scene")
     end
   end)
 end
