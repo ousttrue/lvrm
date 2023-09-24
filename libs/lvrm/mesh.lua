@@ -82,8 +82,9 @@ end
 
 ---@param r GltfReader
 ---@param gltf_mesh gltf.Mesh
+---@param materials lvrm.Material[]
 ---@return lvrm.Mesh
-function Mesh.load(r, gltf_mesh)
+function Mesh.load(r, gltf_mesh, materials)
   local total_vertex_count = 0
   local total_index_count = 0
   local submeshes = {}
@@ -91,11 +92,14 @@ function Mesh.load(r, gltf_mesh)
     local vertex_count = r.root.accessors[p.attributes.POSITION + 1].count -- 1origin
     local index_count = 0
 
+    local material = materials[p.material + 1] -- 1origin
+    assert(material)
+
     if p.indices then
       index_count = r.root.accessors[p.indices + 1].count -- 1origin
-      table.insert(submeshes, Submesh.new(Material.new(), total_index_count + 1, index_count)) -- 1origin
+      table.insert(submeshes, Submesh.new(material, total_index_count + 1, index_count)) -- 1origin
     else
-      table.insert(submeshes, Submesh.new(Material.new(), total_vertex_count + 1, vertex_count)) -- 1origin
+      table.insert(submeshes, Submesh.new(material, total_vertex_count + 1, vertex_count)) -- 1origin
     end
 
     total_vertex_count = total_vertex_count + vertex_count
@@ -133,11 +137,20 @@ function Mesh.load(r, gltf_mesh)
       end
     end
 
-    local positions_data, v_count = r:read_accessor_bytes(p.attributes.POSITION)
+    local attributes = p.attributes
+    local positions_data, v_count = r:read_accessor_bytes(attributes.POSITION)
     for i = 0, v_count - 1 do
-      p_vertices[vertex_offset].Position = positions_data[i]
-      vertex_offset = vertex_offset + 1
+      p_vertices[vertex_offset + i].Position = positions_data[i]
     end
+
+    if attributes.TEXCOORD_0 then
+      local uv_data = r:read_accessor_bytes(attributes.TEXCOORD_0)
+      for i = 0, v_count - 1 do
+        p_vertices[vertex_offset + i].TexCoord = uv_data[i]
+      end
+    end
+
+    vertex_offset = vertex_offset + v_count
   end
 
   return Mesh.new(VERTEX_FORMAT, data, submeshes, indices)
@@ -149,6 +162,11 @@ end
 function Mesh:draw(model, view, projection)
   for _, s in ipairs(self.submeshes) do
     s.material:use()
+    if s.material.color_texture then
+      self.vertex_buffer:setTexture(s.material.color_texture)
+    else
+      self.vertex_buffer:setTexture()
+    end
     s.material.shader:send("m_model", model.data, "column")
     s.material.shader:send("m_view", view.data, "column")
     s.material.shader:send("m_projection", projection.data, "column")

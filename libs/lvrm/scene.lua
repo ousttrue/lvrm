@@ -1,3 +1,4 @@
+local Material = require "lvrm.material"
 local Mesh = require "lvrm.mesh"
 local Node = require "lvrm.node"
 local falg = require "falg"
@@ -12,6 +13,10 @@ Scene.__index = Scene
 function Scene.new()
   ---@class  lvrm.SceneInstance
   local instance = {
+    ---@type love.Texture[]
+    textures = {},
+    ---@type lvrm.Material[]
+    materials = {},
     ---@type lvrm.Mesh[]
     meshes = {},
     ---@type lvrm.Node[]
@@ -23,14 +28,37 @@ function Scene.new()
   return setmetatable(instance, Scene)
 end
 
+---@param bytes string
+---@return love.Texture
+local function load_texture(bytes)
+  local data = love.data.newByteData(bytes)
+  local image = love.image.newImageData(data)
+  local texture = love.graphics.newImage(image)
+  image:release()
+  return texture
+end
+
 ---@param reader GltfReader
 ---@return lvrm.Scene
 function Scene.load(reader)
   local scene = Scene.new()
 
+  -- textures
+  for _, gltf_texture in ipairs(reader.root.textures) do
+    local image_bytes = reader:read_image_bytes(gltf_texture.source)
+    local texture = load_texture(image_bytes)
+    table.insert(scene.textures, texture)
+  end
+
+  -- materials
+  for _, gltf_material in ipairs(reader.root.materials) do
+    local material = Material.load(gltf_material, scene.textures)
+    table.insert(scene.materials, material)
+  end
+
   -- meshes
   for _, gltf_mesh in ipairs(reader.root.meshes) do
-    local mesh = Mesh.load(reader, gltf_mesh)
+    local mesh = Mesh.load(reader, gltf_mesh, scene.materials)
     table.insert(scene.meshes, mesh)
   end
 
@@ -70,6 +98,7 @@ end
 ---@param projection falg.Mat4
 function Scene:draw(view, projection)
   love.graphics.push "all"
+  love.graphics.setDepthMode("lequal", true)
   for _, n in ipairs(self.root_nodes) do
     n:draw_recursive(IDENTITY, view, projection)
   end

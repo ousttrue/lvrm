@@ -104,19 +104,31 @@ local function get_item_size(accessor)
   return component_type_size_map[accessor.componentType] * type_count_map[accessor.type]
 end
 
+---@param bufferview_index integer 0 origin
+---@return string
+function GltfReader:read_bufferview_bytes(bufferview_index)
+  local buffer_view = self.root.bufferViews[bufferview_index + 1] -- 1origin
+  local buffer_view_offset = 0
+  if buffer_view.byteOffset then
+    buffer_view_offset = buffer_view.byteOffset
+  end
+  return self.bin:sub(buffer_view_offset + 1, buffer_view_offset + buffer_view.byteLength)
+end
+
+---@param image_index integer 0 origin
+---@return string
+function GltfReader:read_image_bytes(image_index)
+  local image = self.root.images[image_index + 1] -- 1origin
+  return self:read_bufferview_bytes(image.bufferView)
+end
+
 ---@param accessor_index integer 0 origin
 ---@return ffi.cdata* pointer
 ---@return integer count
 ---@return integer stride
 function GltfReader:read_accessor_bytes(accessor_index)
   local accessor = self.root.accessors[accessor_index + 1] -- 1origin
-  local buffer_view = self.root.bufferViews[accessor.bufferView + 1]
-
-  local buffer_view_offset = 0
-  if buffer_view.byteOffset then
-    buffer_view_offset = buffer_view.byteOffset
-  end
-  local buffer_view_bytes = self.bin:sub(buffer_view_offset + 1, buffer_view_offset + buffer_view.byteLength)
+  local bufferview_bytes = self:read_bufferview_bytes(accessor.bufferView)
 
   local accessor_offset = 0
   if accessor.byteOffset then
@@ -124,7 +136,7 @@ function GltfReader:read_accessor_bytes(accessor_index)
   end
   local accessor_item_size = get_item_size(accessor)
   local accessor_length = accessor.count * accessor_item_size
-  local accessor_bytes = buffer_view_bytes:sub(accessor_offset + 1, accessor_offset + accessor_length)
+  local accessor_bytes = bufferview_bytes:sub(accessor_offset + 1, accessor_offset + accessor_length)
 
   -- return accessor_bytes
   if accessor.componentType == 5123 then
@@ -136,7 +148,9 @@ function GltfReader:read_accessor_bytes(accessor_index)
     assert(accessor.type == "SCALAR")
     return ffi.cast("unsigned int*", accessor_bytes), accessor.count, accessor_item_size
   elseif accessor.componentType == 5126 then
-    if accessor.type == "VEC3" then
+    if accessor.type == "VEC2" then
+      return ffi.cast("Float2*", accessor_bytes), accessor.count, accessor_item_size
+    elseif accessor.type == "VEC3" then
       return ffi.cast("Float3*", accessor_bytes), accessor.count, accessor_item_size
     else
       assert(false, "unknown type", accessor.componentType, accessor.type)
