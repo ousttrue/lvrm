@@ -4,7 +4,7 @@
 -- to [LuaCATS](https://luals.github.io/wiki/annotations/)
 --
 
----https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/schema/asset.schema.json
+--- https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/schema/asset.schema.json
 ---@class gltf.Asset
 ---@field copyright string
 ---@field generator string
@@ -14,12 +14,12 @@
 ---@class gltf.ChildOfRootProperty
 ---@field name string?
 
----https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/schema/buffer.schema.json
+--- https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/schema/buffer.schema.json
 ---@class gltf.Buffer: gltf.ChildOfRootProperty
 ---@field uri string?
 ---@field byteLength integer
 
----https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/schema/bufferView.schema.json
+--- https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/schema/bufferView.schema.json
 ---@class gltf.BufferView: gltf.ChildOfRootProperty
 ---@field buffer integer
 ---@field byteOffset integer?
@@ -60,6 +60,43 @@ local GltfAccessor_Type = {
 ---@field min number[]?
 ---@field sparse table?
 
+---@class gltf.Sampler
+---@field magFilter integer [9728:NEAREST, 9729:LINEAR]
+---@field minFilter integer [9728:NEAREST, 9729:LINEAR, 9984:NEAREST_MIPMAP_NEAREST, 9985:LINEAR_MIPMAP_NEAREST, 9986:NEAREST_MIPMAP_LINEAR, 9987:LINEAR_MIPMAP_LINEAR]
+---@field wrapS integer [33071:CLAMP_TO_EDGE, 33648:MIRRORED_REPEAT, 10497:REPEAT]
+---@field wrapT integer [33071:CLAMP_TO_EDGE, 33648:MIRRORED_REPEAT, 10497:REPEAT]
+
+---@class gltf.Image
+---@field name string?
+---@field uri string?
+---@field mimeType string?
+---@field bufferView integer?
+
+---@class gltf.Texture: gltf.ChildOfRootProperty
+---@field sampler integer?
+---@field source integer
+
+---@class gltf.TextureInfo
+---@field index integer
+
+---@class gltf.PbrMetallicRoughness
+---@field baseColorFactor number[]?
+---@field baseColorTexture gltf.TextureInfo?
+---@field metallicFactor number?
+---@field roughnessFactor number?
+---@field metallicRoughnessTexture gltf.TextureInfo?
+
+---@class gltf.Material
+---@field name string?
+---@field pbrMetallicRoughness gltf.PbrMetallicRoughness?
+---@field normalTexture gltf.TextureInfo?
+---@field occlusionTexture gltf.TextureInfo?
+---@field emissiveTexture gltf.TextureInfo?
+---@field emissiveFactor number[]?
+---@field alphaMode string ["OPAQUE", "MASK", "BLEND"]?
+---@field alphaCutoff number?
+---@field doubleSided boolean?
+
 ---@class gltf.Attributes
 ---@field POSITION integer
 ---@field NORMAL integer?
@@ -88,52 +125,21 @@ local GltfAccessor_Type = {
 ---@field mesh integer?
 ---@field skin integer?
 
----@class gltf.TextureInfo
----@field index integer
+--- https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/schema/scene.schema.json
+---@class gltf.Scene: gltf.ChildOfRootProperty
+---@field nodes integer[]?
 
----@class gltf.PbrMetallicRoughness
----@field baseColorFactor number[]?
----@field baseColorTexture gltf.TextureInfo?
----@field metallicFactor number?
----@field roughnessFactor number?
----@field metallicRoughnessTexture gltf.TextureInfo?
-
----@class gltf.Material
----@field name string?
----@field pbrMetallicRoughness gltf.PbrMetallicRoughness?
----@field normalTexture gltf.TextureInfo?
----@field occlusionTexture gltf.TextureInfo?
----@field emissiveTexture gltf.TextureInfo?
----@field emissiveFactor number[]?
----@field alphaMode string ["OPAQUE", "MASK", "BLEND"]?
----@field alphaCutoff number?
----@field doubleSided boolean?
-
----@class gltf.Sampler
----@field magFilter integer [9728:NEAREST, 9729:LINEAR]
----@field minFilter integer [9728:NEAREST, 9729:LINEAR, 9984:NEAREST_MIPMAP_NEAREST, 9985:LINEAR_MIPMAP_NEAREST, 9986:NEAREST_MIPMAP_LINEAR, 9987:LINEAR_MIPMAP_LINEAR]
----@field wrapS integer [33071:CLAMP_TO_EDGE, 33648:MIRRORED_REPEAT, 10497:REPEAT]
----@field wrapT integer [33071:CLAMP_TO_EDGE, 33648:MIRRORED_REPEAT, 10497:REPEAT]
-
----@class gltf.Image
----@field name string?
----@field uri string?
----@field mimeType string?
----@field bufferView integer?
-
----@class gltf.Texture
----@field name string?
----@field sampler integer?
----@field source integer
-
+--- https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/schema/glTF.schema.json
 ---@class gltf.Root
 ---@field asset gltf.Asset
----@field buffers gltf.Buffer[]
----@field bufferViews gltf.BufferView[]
----@field accessors gltf.Accessor[]
+---@field buffers gltf.Buffer[]?
+---@field bufferViews gltf.BufferView[]?
+---@field accessors gltf.Accessor[]?
 ---@field images gltf.Image[]?
 ---@field samplers gltf.Sampler[]?
 ---@field textures gltf.Texture[]?
----@field materials gltf.Material[]
----@field meshes gltf.Mesh[]
----@field nodes gltf.Node[]
+---@field materials gltf.Material[]?
+---@field meshes gltf.Mesh[]?
+---@field nodes gltf.Node[]?
+---@field scenes gltf.Scene[]?
+---@field scene integer?

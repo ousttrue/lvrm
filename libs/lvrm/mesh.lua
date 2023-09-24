@@ -88,7 +88,7 @@ function Mesh.load(r, gltf_mesh)
   local total_index_count = 0
   local submeshes = {}
   for _, p in ipairs(gltf_mesh.primitives) do
-    local vertex_count = r.root.accessors[p.attributes.POSITION].count -- 1origin
+    local vertex_count = r.root.accessors[p.attributes.POSITION + 1].count -- 1origin
     local index_count = 0
 
     if p.indices then

@@ -1,6 +1,5 @@
 local Mesh = require "lvrm.mesh"
-local falg = require "falg"
-local IDENTITY = falg.Mat4.new():identity()
+local Node = require "lvrm.node"
 
 ---@class lvrm.Scene: lvrm.SceneInstance
 local Scene = {}
@@ -12,6 +11,10 @@ function Scene.new()
   local instance = {
     ---@type lvrm.Mesh[]
     meshes = {},
+    ---@type lvrm.Node[]
+    nodes = {},
+    ---@type lvrm.Node[]
+    root_nodes = {},
   }
   ---@type lvrm.Scene
   return setmetatable(instance, Scene)
@@ -22,10 +25,39 @@ end
 function Scene.load(reader)
   local scene = Scene.new()
 
-  for _, m in ipairs(reader.root.meshes) do
-    local mesh = Mesh.load(reader, m)
-    -- local mesh = Mesh.new_triangle()
+  -- meshes
+  for _, gltf_mesh in ipairs(reader.root.meshes) do
+    local mesh = Mesh.load(reader, gltf_mesh)
     table.insert(scene.meshes, mesh)
+  end
+
+  -- nodes
+  for _, gltf_node in ipairs(reader.root.nodes) do
+    local node = Node.load(gltf_node)
+
+    if gltf_node.mesh then
+      node.mesh = scene.meshes[gltf_node.mesh + 1] -- 1origin
+    end
+
+    table.insert(scene.nodes, node)
+  end
+
+  -- chilldren / parent
+  for i, gltf_node in ipairs(reader.root.nodes) do
+    local node = scene.nodes[i]
+    if gltf_node.children then
+      for _, c in ipairs(gltf_node.children) do
+        local child = scene.nodes[c + 1] -- 1origin
+        node:add_child(child)
+      end
+    end
+  end
+
+  -- no prent to root
+  for _, node in ipairs(scene.nodes) do
+    if not node.parent then
+      table.insert(scene.root_nodes, node)
+    end
   end
 
   return scene
@@ -35,8 +67,8 @@ end
 ---@param projection falg.Mat4
 function Scene:draw(view, projection)
   love.graphics.push "all"
-  for _, m in ipairs(self.meshes) do
-    m:draw(IDENTITY, view, projection)
+  for _, n in ipairs(self.root_nodes) do
+    n:draw_recursive(view, projection)
   end
   love.graphics.pop()
 end
