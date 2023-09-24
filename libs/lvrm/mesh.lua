@@ -125,16 +125,18 @@ function Mesh.load(r, gltf_mesh)
   local vertex_offset = 0
   local index_offset = 0
   for _, p in ipairs(gltf_mesh.primitives) do
+    if p.indices then
+      local indices_data, i_count = r:read_accessor_bytes(p.indices)
+      for i = 0, i_count - 1 do
+        p_indices[index_offset] = indices_data[i] + vertex_offset
+        index_offset = index_offset + 1
+      end
+    end
+
     local positions_data, v_count = r:read_accessor_bytes(p.attributes.POSITION)
     for i = 0, v_count - 1 do
       p_vertices[vertex_offset].Position = positions_data[i]
       vertex_offset = vertex_offset + 1
-    end
-
-    if p.indices then
-      local indices_data, i_count, i_stride = r:read_accessor_bytes(p.indices)
-      ffi.copy(p_indices + index_offset, indices_data, i_stride * i_count)
-      index_offset = index_offset + i_count
     end
   end
 

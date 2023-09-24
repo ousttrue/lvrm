@@ -19,7 +19,7 @@ function Node.new(id, name)
     ---@type lvrm.Node[]
     children = {},
     ---@type falg.Mat4
-    matrix = falg.Mat4.new():identity(),
+    local_matrix = falg.Mat4.new():identity(),
   }
   ---@type lvrm.Node
   return setmetatable(instance, Node)
@@ -30,7 +30,23 @@ end
 ---@param default_name string
 ---@return lvrm.Node
 function Node.load(id, gltf_node, default_name)
-  return Node.new(id, gltf_node.name and gltf_node.name or default_name)
+  local node = Node.new(id, gltf_node.name and gltf_node.name or default_name)
+
+  if gltf_node.matrix then
+    node.local_matrix:set_array(gltf_node.matrix)
+  else
+    if gltf_node.translation then
+      node.local_matrix:translation(unpack(gltf_node.translation))
+    end
+    if gltf_node.rotation then
+      node.local_matrix:rotation(unpack(gltf_node.rotation))
+    end
+    if gltf_node.scale then
+      assert(false, "scale not implementd")
+    end
+  end
+
+  return node
 end
 
 ---@param child lvrm.Node
@@ -53,15 +69,17 @@ function Node:add_child(child)
   child.parent = self
 end
 
+---@param parent falg.Mat4
 ---@param view falg.Mat4
 ---@param projection falg.Mat4
-function Node:draw_recursive(view, projection)
+function Node:draw_recursive(parent, view, projection)
+  local world = self.local_matrix * parent
   if self.mesh then
-    self.mesh:draw(self.matrix, view, projection)
+    self.mesh:draw(world, view, projection)
   end
 
   for _, child in ipairs(self.children) do
-    child:draw_recursive(view, projection)
+    child:draw_recursive(world, view, projection)
   end
 end
 

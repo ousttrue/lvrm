@@ -1,5 +1,8 @@
 local Mesh = require "lvrm.mesh"
 local Node = require "lvrm.node"
+local falg = require "falg"
+
+local IDENTITY = falg.Mat4.new():identity()
 
 ---@class lvrm.Scene: lvrm.SceneInstance
 local Scene = {}
@@ -68,7 +71,7 @@ end
 function Scene:draw(view, projection)
   love.graphics.push "all"
   for _, n in ipairs(self.root_nodes) do
-    n:draw_recursive(view, projection)
+    n:draw_recursive(IDENTITY, view, projection)
   end
   love.graphics.pop()
 end

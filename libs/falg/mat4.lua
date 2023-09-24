@@ -154,6 +154,26 @@ function Mat4:translation(x, y, z)
   return self
 end
 
+---@param x number
+---@param y number
+---@param z number
+---@param w number
+---@return falg.Mat4 self
+function Mat4:rotation(x, y, z, w)
+  local m = self:get_cdata()
+  m._11 = 1 - 2 * y * y - 2 * z * z
+  m._22 = 1 - 2 * z * z - 2 * x * x
+  m._33 = 1 - 2 * x * x - 2 * y * y
+  m._44 = 1
+  m._31 = 2 * z * x + 2 * w * y
+  m._13 = 2 * z * x - 2 * w * y
+  m._12 = 2 * x * y + 2 * w * z
+  m._21 = 2 * x * y - 2 * w * z
+  m._23 = 2 * y * z + 2 * w * x
+  m._32 = 2 * y * z - 2 * w * x
+  return self
+end
+
 ---Update 3x3
 ---1
 --- cS
