@@ -71,7 +71,7 @@ function Scene.load(reader)
   -- nodes
   if reader.root.nodes then
     for i, gltf_node in ipairs(reader.root.nodes) do
-      local node = Node.load(string.format("%d", i), gltf_node, string.format("__node__:02d", i))
+      local node = Node.load(gltf_node, string.format("__node__:02d", i))
 
       if gltf_node.mesh then
         node.mesh = scene.meshes[gltf_node.mesh + 1] -- 1origin

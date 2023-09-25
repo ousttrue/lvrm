@@ -149,7 +149,7 @@ local function traverse_node(node)
   imgui.TableNextRow()
   imgui.TableNextColumn()
   local flags = NodeFlag(#node.children == 0, false)
-  local node_open = imgui.TreeNodeEx_StrStr(node.id, flags, "%s", node.name)
+  local node_open = imgui.TreeNodeEx_Ptr(node.id, flags, "%s", node.name)
 
   imgui.TableNextColumn()
 

@@ -1,19 +1,18 @@
+local ffi = require "ffi"
 local falg = require "libs.falg"
 
 ---@class lvrm.Node: lvrm.NodeInstance
 local Node = {}
 Node.__index = Node
 
----@param id string
 ---@param name string
 ---@return lvrm.Node
-function Node.new(id, name)
+function Node.new(name)
   ---@class lvrm.NodeInstance
   ---@field parent lvrm.Node?
   ---@field mesh lvrm.Mesh?
   local instance = {
-    ---@type string for imgui id
-    id = id,
+    id = ffi.new "int[1]",
     ---@type string
     name = name,
     ---@type lvrm.Node[]
@@ -25,12 +24,11 @@ function Node.new(id, name)
   return setmetatable(instance, Node)
 end
 
----@param id string
 ---@param gltf_node gltf.Node
 ---@param default_name string
 ---@return lvrm.Node
-function Node.load(id, gltf_node, default_name)
-  local node = Node.new(id, gltf_node.name and gltf_node.name or default_name)
+function Node.load(gltf_node, default_name)
+  local node = Node.new(gltf_node.name and gltf_node.name or default_name)
 
   if gltf_node.matrix then
     node.local_matrix:set_array(gltf_node.matrix)
