@@ -1,3 +1,5 @@
+require "falg"
+local ffi = require "ffi"
 local lvrm_shader = require "lvrm.shader"
 
 ---@class lvrm.Material:lvrm.MaterialInstance
@@ -38,6 +40,16 @@ end
 
 function Material:use()
   love.graphics.setShader(self.shader)
+end
+
+local MAT4_SIZE = ffi.sizeof "Mat4"
+assert(MAT4_SIZE)
+local M = love.data.newByteData(MAT4_SIZE)
+---@param name string
+---@param m falg.Mat4
+function Material:send_mat4(name, m)
+  ffi.copy(M:getFFIPointer(), m, MAT4_SIZE)
+  self.shader:send(name, M, "column")
 end
 
 return Material

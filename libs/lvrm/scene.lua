@@ -3,7 +3,7 @@ local Mesh = require "lvrm.mesh"
 local Node = require "lvrm.node"
 local falg = require "falg"
 
-local IDENTITY = falg.Mat4.new():identity()
+local IDENTITY = falg.Mat4():identity()
 
 ---@class lvrm.Scene: lvrm.SceneInstance
 local Scene = {}
@@ -44,50 +44,58 @@ function Scene.load(reader)
   local scene = Scene.new()
 
   -- textures
-  for _, gltf_texture in ipairs(reader.root.textures) do
-    local image_bytes = reader:read_image_bytes(gltf_texture.source)
-    local texture = load_texture(image_bytes)
-    table.insert(scene.textures, texture)
+  if reader.root.textures then
+    for _, gltf_texture in ipairs(reader.root.textures) do
+      local image_bytes = reader:read_image_bytes(gltf_texture.source)
+      local texture = load_texture(image_bytes)
+      table.insert(scene.textures, texture)
+    end
   end
 
   -- materials
-  for _, gltf_material in ipairs(reader.root.materials) do
-    local material = Material.load(gltf_material, scene.textures)
-    table.insert(scene.materials, material)
+  if reader.root.materials then
+    for _, gltf_material in ipairs(reader.root.materials) do
+      local material = Material.load(gltf_material, scene.textures)
+      table.insert(scene.materials, material)
+    end
   end
 
   -- meshes
-  for _, gltf_mesh in ipairs(reader.root.meshes) do
-    local mesh = Mesh.load(reader, gltf_mesh, scene.materials)
-    table.insert(scene.meshes, mesh)
+  if reader.root.meshes then
+    for _, gltf_mesh in ipairs(reader.root.meshes) do
+      local mesh = Mesh.load(reader, gltf_mesh, scene.materials)
+      table.insert(scene.meshes, mesh)
+    end
   end
 
   -- nodes
-  for i, gltf_node in ipairs(reader.root.nodes) do
-    local node = Node.load(string.format("%d", i), gltf_node, string.format("__node__:02d", i))
+  if reader.root.nodes then
+    for i, gltf_node in ipairs(reader.root.nodes) do
+      local node = Node.load(string.format("%d", i), gltf_node, string.format("__node__:02d", i))
 
-    if gltf_node.mesh then
-      node.mesh = scene.meshes[gltf_node.mesh + 1] -- 1origin
+      if gltf_node.mesh then
+        node.mesh = scene.meshes[gltf_node.mesh + 1] -- 1origin
+      end
+
+      table.insert(scene.nodes, node)
     end
 
-    table.insert(scene.nodes, node)
-  end
-
-  -- chilldren / parent
-  for i, gltf_node in ipairs(reader.root.nodes) do
-    local node = scene.nodes[i]
-    if gltf_node.children then
-      for _, c in ipairs(gltf_node.children) do
-        local child = scene.nodes[c + 1] -- 1origin
-        node:add_child(child)
+    -- chilldren / parent
+    for i, gltf_node in ipairs(reader.root.nodes) do
+      local node = scene.nodes[i]
+      if gltf_node.children then
+        for _, c in ipairs(gltf_node.children) do
+          local child = scene.nodes[c + 1] -- 1origin
+          node:add_child(child)
+        end
       end
     end
-  end
 
-  -- no prent to root
-  for _, node in ipairs(scene.nodes) do
-    if not node.parent then
-      table.insert(scene.root_nodes, node)
+    -- no prent to root
+    for _, node in ipairs(scene.nodes) do
+      if not node.parent then
+        table.insert(scene.root_nodes, node)
+      end
     end
   end
 

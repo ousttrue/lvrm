@@ -1,5 +1,6 @@
 require "lvrm.gltf_reader"
 local ffi = require "ffi"
+require "falg"
 
 local Material = require "lvrm.material"
 
@@ -167,9 +168,10 @@ function Mesh:draw(model, view, projection)
     else
       self.vertex_buffer:setTexture()
     end
-    s.material.shader:send("m_model", model.data, "column")
-    s.material.shader:send("m_view", view.data, "column")
-    s.material.shader:send("m_projection", projection.data, "column")
+
+    s.material:send_mat4("m_model", model)
+    s.material:send_mat4("m_view", view)
+    s.material:send_mat4("m_projection", projection)
     self.vertex_buffer:setDrawRange(s.start, s.drawcount)
     love.graphics.draw(self.vertex_buffer)
   end

@@ -1,12 +1,4 @@
 local ffi = require "ffi"
-ffi.cdef [[
-typedef struct {
-  float X, Y;
-} Float2;
-typedef struct {
-  float X, Y, Z;      
-} Float3;
-]]
 
 local GLB_MAGIC = "glTF"
 local GLB_VERSION = 2

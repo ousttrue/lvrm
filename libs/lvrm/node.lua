@@ -19,7 +19,7 @@ function Node.new(id, name)
     ---@type lvrm.Node[]
     children = {},
     ---@type falg.Mat4
-    local_matrix = falg.Mat4.new():identity(),
+    local_matrix = falg.Mat4():identity(),
   }
   ---@type lvrm.Node
   return setmetatable(instance, Node)
