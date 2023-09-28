@@ -253,4 +253,47 @@ function M.ShowMesh(root, scene)
   imgui.End()
 end
 
+---@param n integer
+---@param curve lvrm.AnimationCurve
+local function show_animation_curve(n, curve)
+  imgui.TableNextRow()
+  imgui.TableNextColumn()
+  imgui.TextUnformatted(string.format("%d", n))
+
+  imgui.TableNextColumn()
+end
+
+---@param n integer
+---@param animation lvrm.Animation
+local function show_animation(n, animation)
+  imgui.TableNextRow()
+  imgui.TableNextColumn()
+  local flags = make_node_flags { is_leaf = false }
+  imgui.SetNextItemOpen(true, imgui.ImGuiCond_FirstUseEver)
+  local node_open = imgui.TreeNodeEx_Ptr(animation.id, flags, string.format("%d", n))
+
+  if node_open then
+    for i, c in ipairs(animation.curves) do
+      show_animation_curve(i, c)
+    end
+
+    imgui.TreePop()
+  end
+end
+
+---@param scene lvrm.Scene
+function M.ShowAnimation(scene)
+  imgui.PushStyleVar_Vec2(imgui.ImGuiStyleVar_WindowPadding, { 0.0, 0.0 })
+  imgui.Begin "animation"
+  imgui.PopStyleVar()
+
+  show_table("sceneAnimationTable", { "num", "name", "duration" }, function()
+    for i, a in ipairs(scene.animations) do
+      show_animation(i, a)
+    end
+  end)
+
+  imgui.End()
+end
+
 return M

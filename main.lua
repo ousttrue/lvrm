@@ -36,6 +36,9 @@ end
 
 ---@param path string?
 function State:load(path)
+  if not path then
+    return
+  end
   local reader = lvrm_reader.read_from_path(path)
   if reader then
     self.json_root = reader.root
@@ -93,6 +96,12 @@ love.load = function(args)
   STATE:add_dock(function()
     if STATE.scene then
       ui.ShowMesh(STATE.json_root, STATE.scene)
+    end
+  end)
+
+  STATE:add_dock(function()
+    if STATE.scene then
+      ui.ShowAnimation(STATE.scene)
     end
   end)
 

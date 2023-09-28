@@ -187,10 +187,15 @@ function GltfReader:read_accessor_bytes(accessor_index)
     assert(accessor.type == "SCALAR")
     return ffi.cast("unsigned int*", accessor_bytes), accessor.count, accessor_item_size
   elseif accessor.componentType == 5126 then
-    if accessor.type == "VEC2" then
+    -- float
+    if accessor.type == "SCALAR" then
+      return ffi.cast("float*", accessor_bytes), accessor.count, accessor_item_size
+    elseif accessor.type == "VEC2" then
       return ffi.cast("Float2*", accessor_bytes), accessor.count, accessor_item_size
     elseif accessor.type == "VEC3" then
       return ffi.cast("Float3*", accessor_bytes), accessor.count, accessor_item_size
+    elseif accessor.type == "VEC4" then
+      return ffi.cast("Float4*", accessor_bytes), accessor.count, accessor_item_size
     else
       assert(false, "unknown type", accessor.componentType, accessor.type)
     end

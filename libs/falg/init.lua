@@ -12,6 +12,9 @@ return {
   ---@type falg.Float3
   Float3 = require "falg.float3",
 
+  ---@type falg.Float4
+  Float4 = require "falg.float4",
+
   ---@type falg.Quat
   Quat = require "falg.Quat",
 

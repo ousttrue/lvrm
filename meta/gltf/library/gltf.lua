@@ -126,6 +126,27 @@ local GltfAccessor_Type = {
 ---@class gltf.Scene: gltf.ChildOfRootProperty
 ---@field nodes integer[]?
 
+--- https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/schema/animation.sampler.schema.json
+---@class gltf.AnimationSampler
+---@field input integer The index of an accessor containing keyframe timestamps.
+---@field interplocation "LINEAR"|"CUBE"|"STEP"
+---@field output integer The index of an accessor, containing keyframe output values.
+
+---https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/schema/animation.channel.target.schema.json
+---@class gltf.AnimationChannelTarget
+---@field node integer?
+---@field path "translation"|"rotation"|"scale"|"weights"
+
+--- https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/schema/animation.channel.schema.json
+---@class gltf.AnimationChannel
+---@field sampler integer
+---@field target gltf.AnimationChannelTarget
+
+--- https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/schema/animation.schema.json
+---@class gltf.Animation: gltf.ChildOfRootProperty
+---@field samplers gltf.AnimationSampler[]
+---@field channels gltf.AnimationChannel[]
+
 --- https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/schema/glTF.schema.json
 ---@class gltf.Root
 ---@field asset gltf.Asset
@@ -140,3 +161,4 @@ local GltfAccessor_Type = {
 ---@field nodes gltf.Node[]?
 ---@field scenes gltf.Scene[]?
 ---@field scene integer?
+---@field animations gltf.Animation[]?
