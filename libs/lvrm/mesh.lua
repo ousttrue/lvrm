@@ -53,6 +53,7 @@ function Mesh.new(vertexformat, data, submeshes, indices)
 
   ---@class lvrm.MeshInstance
   local instance = {
+    id = ffi.new "int[1]",
     ---@type love.Mesh
     vertex_buffer = lg_mesh,
     ---@type lvrm.SubMesh[]

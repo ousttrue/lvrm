@@ -4,11 +4,27 @@ local imgui = require "cimgui"
 
 local M = {}
 
-local GLTF_JSON_COLS = { "prop", "value" }
-local SCENE_COLS = { "name", "TRS", "mesh" }
-
 local TABLE_FLAGS =
   imgui.love.TableFlags("Resizable", "RowBg", "Borders", "NoBordersInBody", "ScrollX", "ScrollY", "SizingFixedFit")
+
+---@param name string
+---@param cols string[]
+---@param body function
+local function show_table(name, cols, body)
+  if imgui.BeginTable(name, #cols, TABLE_FLAGS) then
+    for _, col in ipairs(cols) do
+      imgui.TableSetupColumn(col)
+    end
+    imgui.TableSetupScrollFreeze(0, 1)
+    imgui.TableHeadersRow()
+    imgui.PushStyleVar_Float(imgui.ImGuiStyleVar_IndentSpacing, 12)
+
+    body()
+
+    imgui.PopStyleVar()
+    imgui.EndTable()
+  end
+end
 
 ---@param name string
 ---@return integer width
@@ -48,14 +64,13 @@ function M.BeginDockspace(name)
   return size.x, size.y
 end
 
----@param is_leaf boolean
----@param is_selected boolean
-local function NodeFlag(is_leaf, is_selected)
+---@param opts {is_leaf: boolean, is_selected: boolean}?
+local function make_node_flags(opts)
   local node_flags = imgui.love.TreeNodeFlags("OpenOnArrow", "OpenOnDoubleClick", "SpanAvailWidth")
-  if is_leaf then
+  if opts and opts.is_leaf then
     node_flags = bit.bor(node_flags, imgui.love.TreeNodeFlags "Leaf")
   end
-  if is_selected then
+  if opts and opts.is_selected then
     node_flags = bit.bor(node_flags, imgui.love.TreeNodeFlags "Selected")
   end
   return node_flags
@@ -68,7 +83,7 @@ local function traverse_json(jsonpath, prop, node)
   local node_open = false
   local t = type(node)
   local is_leaf = t ~= "table"
-  local flags = NodeFlag(is_leaf, false)
+  local flags = make_node_flags { is_leaf = is_leaf }
   if prop then
     imgui.TableNextRow()
     imgui.TableNextColumn()
@@ -121,25 +136,14 @@ local function traverse_json(jsonpath, prop, node)
 end
 
 ---@param root table
----@param title string
-function M.ShowJson(root, title)
+function M.ShowJson(root)
   imgui.PushStyleVar_Vec2(imgui.ImGuiStyleVar_WindowPadding, { 0.0, 0.0 })
-  imgui.Begin(title)
+  imgui.Begin "glTF"
   imgui.PopStyleVar()
 
-  if imgui.BeginTable("glTFJsonTable", #GLTF_JSON_COLS, TABLE_FLAGS) then
-    for _, col in ipairs(GLTF_JSON_COLS) do
-      imgui.TableSetupColumn(col)
-    end
-    imgui.TableSetupScrollFreeze(0, 1)
-    imgui.TableHeadersRow()
-    imgui.PushStyleVar_Float(imgui.ImGuiStyleVar_IndentSpacing, 12)
-
+  show_table("glTFJsonTable", { "prop", "value" }, function()
     traverse_json("", nil, root)
-
-    imgui.PopStyleVar()
-    imgui.EndTable()
-  end
+  end)
 
   imgui.End()
 end
@@ -148,7 +152,7 @@ end
 local function traverse_node(node)
   imgui.TableNextRow()
   imgui.TableNextColumn()
-  local flags = NodeFlag(#node.children == 0, false)
+  local flags = make_node_flags { is_leaf = #node.children == 0 }
   local node_open = imgui.TreeNodeEx_Ptr(node.id, flags, "%s", node.name)
 
   imgui.TableNextColumn()
@@ -168,27 +172,77 @@ local function traverse_node(node)
 end
 
 ---@param scene lvrm.Scene
----@param title string
-function M.ShowScene(scene, title)
+function M.ShowScene(scene)
   imgui.PushStyleVar_Vec2(imgui.ImGuiStyleVar_WindowPadding, { 0.0, 0.0 })
-  imgui.Begin(title)
+  imgui.Begin "scene"
   imgui.PopStyleVar()
 
-  if imgui.BeginTable("sceneTreeTable", #SCENE_COLS, TABLE_FLAGS) then
-    for _, col in ipairs(SCENE_COLS) do
-      imgui.TableSetupColumn(col)
-    end
-    imgui.TableSetupScrollFreeze(0, 1)
-    imgui.TableHeadersRow()
-    imgui.PushStyleVar_Float(imgui.ImGuiStyleVar_IndentSpacing, 12)
-
+  show_table("sceneTreeTable", { "name", "TRS", "mesh" }, function()
     for _, n in ipairs(scene.root_nodes) do
       traverse_node(n)
     end
+  end)
 
-    imgui.PopStyleVar()
-    imgui.EndTable()
+  imgui.End()
+end
+
+---@param root gltf.Root
+---@param gltf_mesh gltf.Mesh
+---@param n integer
+local function show_prim(root, gltf_mesh, n)
+  imgui.TableNextRow()
+  imgui.TableNextColumn()
+  local flags = make_node_flags { is_leaf = true }
+  local prim = gltf_mesh.primitives[n]
+  local material = root.materials[prim.material + 1]
+  local node_open = imgui.TreeNodeEx_StrStr(string.format("%d", n), flags, "%02d:%s", n, material.name)
+
+  imgui.TableNextColumn()
+  local position_accessor = root.accessors[prim.attributes.POSITION + 1]
+  imgui.TextUnformatted(string.format("%d", position_accessor.count))
+
+  imgui.TableNextColumn()
+  -- imgui.TextUnformatted(string.format())
+
+  imgui.TableNextColumn()
+  -- imgui.TextUnformatted(string.format())
+
+  if node_open then
+    imgui.TreePop()
   end
+end
+
+---@param root gltf.Root
+---@param gltf_mesh gltf.Mesh
+---@param mesh lvrm.Mesh
+local function show_mesh(root, gltf_mesh, mesh)
+  imgui.TableNextRow()
+  imgui.TableNextColumn()
+  local flags = make_node_flags { is_leaf = false }
+  imgui.SetNextItemOpen(true, imgui.ImGuiCond_FirstUseEver)
+  local node_open = imgui.TreeNodeEx_Ptr(mesh.id, flags, "%s", gltf_mesh.name)
+
+  if node_open then
+    for i, _ in ipairs(gltf_mesh.primitives) do
+      show_prim(root, gltf_mesh, i)
+    end
+
+    imgui.TreePop()
+  end
+end
+
+---@param root gltf.Root
+---@param scene lvrm.Scene
+function M.ShowMesh(root, scene)
+  imgui.PushStyleVar_Vec2(imgui.ImGuiStyleVar_WindowPadding, { 0.0, 0.0 })
+  imgui.Begin "mesh"
+  imgui.PopStyleVar()
+
+  show_table("sceneTreeTable", { "name", "vertices", "indices", "morph" }, function()
+    for i, m in ipairs(root.meshes) do
+      show_mesh(root, m, scene.meshes[i])
+    end
+  end)
 
   imgui.End()
 end

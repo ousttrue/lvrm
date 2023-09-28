@@ -60,14 +60,13 @@ local GltfAccessor_Type = {
 ---@field min number[]?
 ---@field sparse table?
 
----@class gltf.Sampler
+---@class gltf.Sampler: gltf.ChildOfRootProperty
 ---@field magFilter integer [9728:NEAREST, 9729:LINEAR]
 ---@field minFilter integer [9728:NEAREST, 9729:LINEAR, 9984:NEAREST_MIPMAP_NEAREST, 9985:LINEAR_MIPMAP_NEAREST, 9986:NEAREST_MIPMAP_LINEAR, 9987:LINEAR_MIPMAP_LINEAR]
 ---@field wrapS integer [33071:CLAMP_TO_EDGE, 33648:MIRRORED_REPEAT, 10497:REPEAT]
 ---@field wrapT integer [33071:CLAMP_TO_EDGE, 33648:MIRRORED_REPEAT, 10497:REPEAT]
 
----@class gltf.Image
----@field name string?
+---@class gltf.Image: gltf.ChildOfRootProperty
 ---@field uri string?
 ---@field mimeType string?
 ---@field bufferView integer?
@@ -86,8 +85,7 @@ local GltfAccessor_Type = {
 ---@field roughnessFactor number?
 ---@field metallicRoughnessTexture gltf.TextureInfo?
 
----@class gltf.Material
----@field name string?
+---@class gltf.Material: gltf.ChildOfRootProperty
 ---@field pbrMetallicRoughness gltf.PbrMetallicRoughness?
 ---@field normalTexture gltf.TextureInfo?
 ---@field occlusionTexture gltf.TextureInfo?
@@ -112,11 +110,10 @@ local GltfAccessor_Type = {
 ---@field indices integer?{
 ---@field material integer?
 
----@class gltf.Mesh
+---@class gltf.Mesh: gltf.ChildOfRootProperty
 ---@field primitives gltf.Primitive[]
 
----@class gltf.Node
----@field name string?
+---@class gltf.Node: gltf.ChildOfRootProperty
 ---@field children integer[]?
 ---@field matrix number[]?
 ---@field rotation number[]?

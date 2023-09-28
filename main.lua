@@ -96,13 +96,19 @@ love.load = function(args)
 
   STATE:add_dock(function()
     if STATE.json_root then
-      ui.ShowJson(STATE.json_root, "glTF")
+      ui.ShowJson(STATE.json_root)
     end
   end)
 
   STATE:add_dock(function()
     if STATE.scene then
-      ui.ShowScene(STATE.scene, "scene")
+      ui.ShowScene(STATE.scene)
+    end
+  end)
+
+  STATE:add_dock(function()
+    if STATE.scene then
+      ui.ShowMesh(STATE.json_root, STATE.scene)
     end
   end)
 
@@ -111,7 +117,7 @@ love.load = function(args)
       -- example window
       imgui.ShowDemoWindow()
     end)
-  end  
+  end
 end
 
 love.draw = function()

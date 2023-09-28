@@ -40,7 +40,7 @@ function Node.load(gltf_node, default_name)
       node.local_matrix:rotation(unpack(gltf_node.rotation))
     end
     if gltf_node.scale then
-      assert(false, "scale not implementd")
+      --assert(false, "scale not implementd")
     end
   end
 
