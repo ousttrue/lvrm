@@ -16,11 +16,17 @@ GltfReader.__index = GltfReader
 ---@param bin_chunk string?
 ---@return GltfReader
 function GltfReader.new(json_chunk, bin_chunk)
+  -- shrink
+  while json_chunk:sub(-1) == "\0" do
+    json_chunk = json_chunk:sub(1, -2)
+  end
   local json = require "json"
+  local root = json.decode(json_chunk)
+
   ---@class GltfReaderInstance
   local instance = {
     ---@type gltf.Root
-    root = json.decode(json_chunk),
+    root = root,
     ---@type string? glb bin_chunk
     bin = bin_chunk,
   }
