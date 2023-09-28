@@ -9,6 +9,9 @@ local Material = {}
 ---@param shader love.Shader
 ---@return lvrm.Material
 function Material.new(name, shader)
+  if type(shader) == "string" then
+    shader = lvrm_shader.get(shader)
+  end
   assert(shader)
   ---@class lvrm.MaterialInstance
   ---@field color_texture love.Texture?
@@ -25,7 +28,6 @@ end
 ---@return lvrm.Material
 function Material.load(gltf_material, textures)
   local shader = lvrm_shader.get "simple"
-  assert(shader)
   local material = Material.new(gltf_material.name, shader)
 
   local pbr = gltf_material.pbrMetallicRoughness

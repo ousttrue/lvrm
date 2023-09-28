@@ -194,8 +194,14 @@ local function show_prim(root, gltf_mesh, n)
   imgui.TableNextColumn()
   local flags = make_node_flags { is_leaf = true }
   local prim = gltf_mesh.primitives[n]
-  local material = root.materials[prim.material + 1]
-  local node_open = imgui.TreeNodeEx_StrStr(string.format("%d", n), flags, "%02d:%s", n, material.name)
+  local material_name = "__no_material__"
+  if prim.material then
+    material_name = root.materials[prim.material + 1].name
+    if not material_name then
+      material_name = "__no_material_name__"
+    end
+  end
+  local node_open = imgui.TreeNodeEx_StrStr(string.format("%d", n), flags, "%02d:%s", n, material_name)
 
   imgui.TableNextColumn()
   local position_accessor = root.accessors[prim.attributes.POSITION + 1]
@@ -220,7 +226,7 @@ local function show_mesh(root, gltf_mesh, mesh)
   imgui.TableNextColumn()
   local flags = make_node_flags { is_leaf = false }
   imgui.SetNextItemOpen(true, imgui.ImGuiCond_FirstUseEver)
-  local node_open = imgui.TreeNodeEx_Ptr(mesh.id, flags, "%s", gltf_mesh.name)
+  local node_open = imgui.TreeNodeEx_Ptr(mesh.id, flags, "%s", gltf_mesh.name or "__no_name__")
 
   if node_open then
     for i, _ in ipairs(gltf_mesh.primitives) do

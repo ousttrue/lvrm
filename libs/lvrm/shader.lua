@@ -18,7 +18,7 @@ local function readfile(path)
 end
 
 ---@param name string
----@return love.Shader?
+---@return love.Shader
 function M.get(name)
   local cache = M.caches[name]
   if cache then
@@ -34,6 +34,7 @@ function M.get(name)
     M.caches[name] = shader
     return shader
   end
+  assert(false, name, "fail to load")
 end
 
 return M

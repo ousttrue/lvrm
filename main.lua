@@ -7,24 +7,11 @@ package.path = package.cpath
 
 local lvrm_reader = require "lvrm.gltf_reader"
 local ui = require "ui"
+local util = require "lvrm.util"
 local Scene = require "lvrm.scene"
 local Camera = require "lvrm.camera"
 ---@class cimgui
 local imgui = require "cimgui"
-
----@param path string?
----@return string?
-local function readfile(path)
-  if not path then
-    return
-  end
-  local r = io.open(path, "rb")
-  if r then
-    local data = r:read "*a"
-    r:close()
-    return data
-  end
-end
 
 ---@class State: StateInstance
 local State = {}
@@ -49,13 +36,10 @@ end
 
 ---@param path string?
 function State:load(path)
-  local data = readfile(path)
-  if data then
-    local model = lvrm_reader.read_from_bytes(data)
-    if model then
-      self.json_root = model.root
-      self.scene = Scene.load(model)
-    end
+  local reader = lvrm_reader.read_from_path(path)
+  if reader then
+    self.json_root = reader.root
+    self.scene = Scene.load(reader)
   end
 end
 
@@ -84,7 +68,7 @@ love.load = function(args)
   -- Enable Docking
   io.ConfigFlags = bit.bor(io.ConfigFlags, imgui.ImGuiConfigFlags_DockingEnable)
 
-  local data = readfile "C:/Windows/Fonts/meiryo.ttc"
+  local data = util.readfile "C:/Windows/Fonts/meiryo.ttc"
   if data then
     local font = love.graphics.newFont(love.data.newByteData(data), 32)
     if font then

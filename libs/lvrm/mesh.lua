@@ -78,7 +78,7 @@ function Mesh.new_triangle()
   buffer[2].Position.Y = 1
 
   return Mesh.new(VERTEX_FORMAT, data, {
-    Submesh.new(Material.new(), 1, 3), -- 1origin
+    Submesh.new(Material.new("default", "default"), 1, 3), -- 1origin
   })
 end
 
@@ -94,8 +94,14 @@ function Mesh.load(r, gltf_mesh, materials)
     local vertex_count = r.root.accessors[p.attributes.POSITION + 1].count -- 1origin
     local index_count = 0
 
-    local material = materials[p.material + 1] -- 1origin
-    assert(material)
+    local material
+    if p.material then
+      material = materials[p.material + 1] -- 1origin
+      assert(material)
+    else
+      -- defualt grayscale
+      material = Material.new("default", "default")
+    end
 
     if p.indices then
       index_count = r.root.accessors[p.indices + 1].count -- 1origin

@@ -1,4 +1,5 @@
 local ffi = require "ffi"
+local util = require "lvrm.util"
 
 local GLB_MAGIC = "glTF"
 local GLB_VERSION = 2
@@ -14,8 +15,9 @@ GltfReader.__index = GltfReader
 
 ---@param json_chunk string
 ---@param bin_chunk string?
+---@param base_dir string?
 ---@return GltfReader
-function GltfReader.new(json_chunk, bin_chunk)
+function GltfReader.new(json_chunk, bin_chunk, base_dir)
   -- shrink
   while json_chunk:sub(-1) == "\0" do
     json_chunk = json_chunk:sub(1, -2)
@@ -27,8 +29,13 @@ function GltfReader.new(json_chunk, bin_chunk)
   local instance = {
     ---@type gltf.Root
     root = root,
-    ---@type string? glb bin_chunk
+
     bin = bin_chunk,
+
+    base_dir = base_dir,
+
+    ---@type {uri:string, bytes:string}
+    uri_cache = {},
   }
   ---@type GltfReader
   return setmetatable(instance, GltfReader)
@@ -45,8 +52,9 @@ end
 
 --- https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html
 ---@param bytes string
+---@param base_dir string?
 ---@return GltfReader?
-function GltfReader.read_from_bytes(bytes)
+function GltfReader.read_from_bytes(bytes, base_dir)
   local r = BytesReader.new(bytes)
   if r:read(4) == GLB_MAGIC then
     -- glb
@@ -70,10 +78,19 @@ function GltfReader.read_from_bytes(bytes)
         assert(false, "unknown chunk_type: ", chunk_type)
       end
     end
-    return GltfReader.new(json_chunk, bin_chunk)
+    return GltfReader.new(json_chunk, bin_chunk, base_dir)
   else
     -- gltf
-    return GltfReader.new(bytes)
+    return GltfReader.new(bytes, nil, base_dir)
+  end
+end
+
+---@param path string
+---@return GltfReader?
+function GltfReader.read_from_path(path)
+  local data = util.readfile(path)
+  if data then
+    return GltfReader.read_from_bytes(data, util.basedir(path))
   end
 end
 
@@ -102,6 +119,27 @@ local function get_item_size(accessor)
   return component_type_size_map[accessor.componentType] * type_count_map[accessor.type]
 end
 
+---@param buffer_index integer 0 origin
+---@return string
+function GltfReader:get_buffer(buffer_index)
+  local buffer = self.root.buffers[buffer_index + 1]
+  if buffer.uri then
+    local cache = self.uri_cache[buffer.uri]
+    if cache then
+      return cache
+    end
+
+    local path = self.base_dir .. "/" .. buffer.uri
+    local data = util.readfile(path)
+    assert(data, path)
+    self.uri_cache[buffer.uri] = data
+    return data
+  else
+    assert(self.bin)
+    return self.bin
+  end
+end
+
 ---@param bufferview_index integer 0 origin
 ---@return string
 function GltfReader:read_bufferview_bytes(bufferview_index)
@@ -110,7 +148,10 @@ function GltfReader:read_bufferview_bytes(bufferview_index)
   if buffer_view.byteOffset then
     buffer_view_offset = buffer_view.byteOffset
   end
-  return self.bin:sub(buffer_view_offset + 1, buffer_view_offset + buffer_view.byteLength)
+
+  local bin = self:get_buffer(buffer_view.buffer)
+
+  return bin:sub(buffer_view_offset + 1, buffer_view_offset + buffer_view.byteLength)
 end
 
 ---@param image_index integer 0 origin
