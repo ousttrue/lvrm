@@ -316,4 +316,45 @@ function M.ShowAnimation(scene)
   imgui.End()
 end
 
+--- image button. capture mouse event
+---@param id string
+---@param texture love.Texture
+---@param size falg.Float2
+function M.DraggableImage(id, texture, size)
+  imgui.ImageButton(id, texture, size, { 0, 1 }, { 1, 0 }, { 1, 1, 1, 1 }, { 1, 1, 1, 1 })
+  imgui.ButtonBehavior(
+    imgui.GetCurrentContext().LastItemData.Rect,
+    imgui.GetCurrentContext().LastItemData.ID,
+    bit.bor(imgui.ImGuiButtonFlags_MouseButtonMiddle, imgui.ImGuiButtonFlags_MouseButtonRight)
+  )
+
+  return imgui.IsItemActive(), imgui.IsItemHovered()
+end
+
+---@class CanvasRenderer: CanvasRendererInstance
+CanvasRenderer = {}
+CanvasRenderer.__index = CanvasRenderer
+
+---@return CanvasRenderer
+function CanvasRenderer.new()
+  ---@class CanvasRendererInstance
+  ---@field canvas love.Canvas?
+  local instance = {}
+
+  ---@type CanvasRenderer
+  return setmetatable(instance, CanvasRenderer)
+end
+
+---@param w integer
+---@param h integer
+---@return love.Canvas
+function CanvasRenderer:render(w, h)
+  if not self.canvas or self.canvas:getWidth() ~= w or self.canvas:getHeight() ~= h then
+    self.canvas = love.graphics.newCanvas(w, h)
+  end
+  return self.canvas
+end
+
+M.CanvasRenderer = CanvasRenderer
+
 return M

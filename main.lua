@@ -5,6 +5,7 @@ end
 package.path = package.cpath
   .. string.format(";%s\\libs\\?.lua;%s\\libs\\?\\init.lua", love.filesystem.getSource(), love.filesystem.getSource())
 
+local falg = require "falg"
 local lvrm_reader = require "lvrm.gltf_reader"
 local ui = require "ui"
 local util = require "lvrm.util"
@@ -47,10 +48,6 @@ function State:load(path)
 end
 
 function State:draw()
-  if self.scene then
-    self.scene:draw(self.camera.view, self.camera.projection)
-  end
-
   local w, h = ui.BeginDockspace "DOCKSPACE"
   self.camera.screen_width = w
   self.camera.screen_height = h
@@ -59,6 +56,20 @@ function State:draw()
   for _, d in ipairs(self.docks) do
     d()
   end
+end
+
+local function make_texture()
+  -- Create some buffer with size 2x2.
+  local image = love.image.newImageData(2, 2)
+
+  -- Update certain pixels:
+  image:setPixel(0, 1, 128, 0, 0, 255)
+
+  local texture = love.graphics.newImage(image)
+  image:release()
+
+  -- Texture will update automatically if changed.
+  return texture
 end
 
 local STATE = State.new()
@@ -105,6 +116,26 @@ love.load = function(args)
     end
   end)
 
+  local r = CanvasRenderer.new()
+
+  STATE:add_dock(function()
+    if imgui.Begin "RenderTarget" then
+      local size = imgui.GetContentRegionAvail()
+      local canvas = r:render(size.x, size.y)
+
+      if STATE.scene then
+        local camera = STATE.camera
+        canvas:renderTo(function()
+          love.graphics.clear({ 0, 25, 25, 0 }, 0, 1)
+          STATE.scene:draw(camera.view, camera.projection)
+        end)
+      end
+
+      ui.DraggableImage("image_button", canvas, size)
+    end
+    imgui.End()
+  end)
+
   if os.getenv "LOCAL_LUA_DEBUGGER_VSCODE" == "1" then
     STATE:add_dock(function()
       -- example window
@@ -131,7 +162,7 @@ love.mousemoved = function(x, y, ...)
   if not imgui.love.GetWantCaptureMouse() then
     -- your code here
     local io = imgui.GetIO()
-    local is_ctrl = imgui.IsKeyDown(imgui.ImGuiKey_LeftCtrl) or imgui.IsKeyDown(imgui.ImGuiKey_RightCtrl)
+    local is_ctrl = imgui.IsKeyDown_Nil(imgui.ImGuiKey_LeftCtrl) or imgui.IsKeyDown_Nil(imgui.ImGuiKey_RightCtrl)
     if io.MouseDown[imgui.ImGuiMouseButton_Right] then
       if is_ctrl then
         STATE.camera:dolly(-io.MouseDelta.y)
