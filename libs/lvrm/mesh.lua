@@ -179,6 +179,7 @@ function Mesh:draw(model, view, projection)
     s.material:send_mat4("m_model", model)
     s.material:send_mat4("m_view", view)
     s.material:send_mat4("m_projection", projection)
+    assert(s.drawcount > 0, "empty submesh")
     self.vertex_buffer:setDrawRange(s.start, s.drawcount)
     love.graphics.draw(self.vertex_buffer)
   end

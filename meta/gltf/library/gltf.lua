@@ -105,10 +105,15 @@ local GltfAccessor_Type = {
 ---@field JOINTS_0 integer?
 ---@field WEIGHTS_0 integer?
 
+---@class gltf.MorphTarget
+---@field POSITION integer
+---@field NORMAL integer?
+
 ---@class gltf.Primitive
 ---@field attributes gltf.Attributes
----@field indices integer?{
+---@field indices integer?
 ---@field material integer?
+---@field targets gltf.MorphTarget[]?
 
 ---@class gltf.Mesh: gltf.ChildOfRootProperty
 ---@field primitives gltf.Primitive[]

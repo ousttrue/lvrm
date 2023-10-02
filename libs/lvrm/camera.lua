@@ -42,7 +42,7 @@ function Camera:calc_matrix()
   -- self.view:identity()
   local yaw = falg.Mat4():rotation_y(self.yaw)
   local pitch = falg.Mat4():rotation_x(self.pitch)
-  self.view = pitch * yaw
+  self.view = yaw * pitch
   self.view:translation(self.x, self.y, self.z)
 
   self.projection:perspective(self.fovy, self.screen_width / self.screen_height, self.znear, self.zfar)

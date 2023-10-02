@@ -103,16 +103,18 @@ function Scene.load(reader)
   end
 
   -- animation
-  for i, gltf_animation in ipairs(reader.root.animations) do
-    local animation = Animation.load(gltf_animation)
-    for j, gltf_channel in ipairs(gltf_animation.channels) do
-      local gltf_sampler = gltf_animation.samplers[gltf_channel.sampler + 1] --1origin
-      local time = reader:read_accessor_bytes(gltf_sampler.input)
-      local values = reader:read_accessor_bytes(gltf_sampler.output)
+  if reader.root.animations then
+    for i, gltf_animation in ipairs(reader.root.animations) do
+      local animation = Animation.load(gltf_animation)
+      for j, gltf_channel in ipairs(gltf_animation.channels) do
+        local gltf_sampler = gltf_animation.samplers[gltf_channel.sampler + 1] --1origin
+        local time = reader:read_accessor_bytes(gltf_sampler.input)
+        local values = reader:read_accessor_bytes(gltf_sampler.output)
 
-      animation:AddCurve(gltf_channel.target, time, values)
+        animation:AddCurve(gltf_channel.target, time, values)
+      end
+      table.insert(scene.animations, animation)
     end
-    table.insert(scene.animations, animation)
   end
 
   return scene
