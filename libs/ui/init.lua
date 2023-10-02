@@ -26,44 +26,6 @@ local function show_table(name, cols, body)
   end
 end
 
----@param name string
----@return integer width
----@return integer height
-function M.BeginDockspace(name)
-  local dockspace_flags = imgui.love.DockNodeFlags "PassthruCentralNode"
-
-  local viewport = imgui.GetMainViewport()
-  imgui.SetNextWindowPos(viewport.WorkPos)
-  imgui.SetNextWindowSize(viewport.WorkSize)
-  imgui.SetNextWindowViewport(viewport.ID)
-  imgui.PushStyleVar_Float(imgui.ImGuiStyleVar_WindowRounding, 0)
-  imgui.PushStyleVar_Float(imgui.ImGuiStyleVar_WindowBorderSize, 0)
-
-  local window_flags = imgui.love.WindowFlags(
-    "NoDocking",
-    "NoTitleBar",
-    "NoCollapse",
-    "NoResize",
-    "NoMove",
-    "NoBringToFrontOnFocus",
-    "NoNavFocus",
-    "NoBackground",
-    "MenuBar"
-  )
-
-  imgui.PushStyleVar_Vec2(imgui.ImGuiStyleVar_WindowPadding, { 0, 0 })
-  imgui.Begin(name, nil, window_flags)
-  imgui.PopStyleVar()
-  imgui.PopStyleVar(2)
-
-  local size = imgui.GetContentRegionAvail()
-
-  local dockspace_id = imgui.GetID_Str(name)
-  imgui.DockSpace(dockspace_id, { 0.0, 0.0 }, dockspace_flags)
-
-  return size.x, size.y
-end
-
 ---@param opts {is_leaf: boolean, is_selected: boolean}?
 local function make_node_flags(opts)
   local node_flags = imgui.love.TreeNodeFlags("OpenOnArrow", "OpenOnDoubleClick", "SpanAvailWidth")
@@ -135,17 +97,14 @@ local function traverse_json(jsonpath, prop, node)
   end
 end
 
----@param root table
+---@param root gltf.Root?
 function M.ShowJson(root)
-  imgui.PushStyleVar_Vec2(imgui.ImGuiStyleVar_WindowPadding, { 0.0, 0.0 })
-  imgui.Begin "glTF"
-  imgui.PopStyleVar()
-
+  if not root then
+    return
+  end
   show_table("glTFJsonTable", { "prop", "value" }, function()
     traverse_json("", nil, root)
   end)
-
-  imgui.End()
 end
 
 ---@param node lvrm.Node
@@ -173,17 +132,14 @@ end
 
 ---@param scene lvrm.Scene
 function M.ShowScene(scene)
-  imgui.PushStyleVar_Vec2(imgui.ImGuiStyleVar_WindowPadding, { 0.0, 0.0 })
-  imgui.Begin "scene"
-  imgui.PopStyleVar()
-
+  if not scene then
+    return
+  end
   show_table("sceneTreeTable", { "name", "TRS", "mesh" }, function()
     for _, n in ipairs(scene.root_nodes) do
       traverse_node(n)
     end
   end)
-
-  imgui.End()
 end
 
 ---@param root gltf.Root
@@ -257,20 +213,17 @@ local function show_mesh(root, gltf_mesh, mesh)
   end
 end
 
----@param root gltf.Root
----@param scene lvrm.Scene
+---@param root gltf.Root?
+---@param scene lvrm.Scene?
 function M.ShowMesh(root, scene)
-  imgui.PushStyleVar_Vec2(imgui.ImGuiStyleVar_WindowPadding, { 0.0, 0.0 })
-  imgui.Begin "mesh"
-  imgui.PopStyleVar()
-
+  if not root or not scene then
+    return
+  end
   show_table("sceneTreeTable", { "mesh/maerial name", "vertices", "indices", "morph" }, function()
     for i, m in ipairs(root.meshes) do
       show_mesh(root, m, scene.meshes[i])
     end
   end)
-
-  imgui.End()
 end
 
 ---@param n integer
@@ -301,19 +254,16 @@ local function show_animation(n, animation)
   end
 end
 
----@param scene lvrm.Scene
+---@param scene lvrm.Scene?
 function M.ShowAnimation(scene)
-  imgui.PushStyleVar_Vec2(imgui.ImGuiStyleVar_WindowPadding, { 0.0, 0.0 })
-  imgui.Begin "animation"
-  imgui.PopStyleVar()
-
+  if not scene then
+    return
+  end
   show_table("sceneAnimationTable", { "num", "name", "duration" }, function()
     for i, a in ipairs(scene.animations) do
       show_animation(i, a)
     end
   end)
-
-  imgui.End()
 end
 
 --- image button. capture mouse event

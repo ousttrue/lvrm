@@ -7,7 +7,8 @@ package.path = package.cpath
 
 local falg = require "falg"
 local lvrm_reader = require "lvrm.gltf_reader"
-local ui = require "ui"
+local UI = require "ui"
+local DockingSpace = require "ui.docking_space"
 local util = require "lvrm.util"
 local Scene = require "lvrm.scene"
 local Camera = require "lvrm.camera"
@@ -23,16 +24,10 @@ function State.new()
   ---@class StateInstance
   local instance = {
     camera = Camera.new(),
-    ---@type fun()[]
-    docks = {},
+    docking_space = DockingSpace.new "DOCKSPACE",
   }
   ---@type State
   return setmetatable(instance, State)
-end
-
----@param f fun()
-function State:add_dock(f)
-  table.insert(self.docks, f)
 end
 
 ---@param path string?
@@ -48,14 +43,12 @@ function State:load(path)
 end
 
 function State:draw()
-  local w, h = ui.BeginDockspace "DOCKSPACE"
+  local w, h = self.docking_space:begin()
   self.camera.screen_width = w
   self.camera.screen_height = h
   self.camera:calc_matrix()
 
-  for _, d in ipairs(self.docks) do
-    d()
-  end
+  self.docking_space:draw()
 end
 
 local function make_texture()
@@ -92,55 +85,41 @@ love.load = function(args)
 
   STATE:load(args[1])
 
-  STATE:add_dock(function()
-    if STATE.json_root then
-      ui.ShowJson(STATE.json_root)
-    end
+  STATE.docking_space:add("glTF", function()
+    UI.ShowJson(STATE.json_root)
   end)
 
-  STATE:add_dock(function()
-    if STATE.scene then
-      ui.ShowScene(STATE.scene)
-    end
+  STATE.docking_space:add("scene", function()
+    UI.ShowScene(STATE.scene)
   end)
 
-  STATE:add_dock(function()
-    if STATE.scene then
-      ui.ShowMesh(STATE.json_root, STATE.scene)
-    end
+  STATE.docking_space:add("mesh", function()
+    UI.ShowMesh(STATE.json_root, STATE.scene)
   end)
 
-  STATE:add_dock(function()
-    if STATE.scene then
-      ui.ShowAnimation(STATE.scene)
-    end
+  STATE.docking_space:add("animation", function()
+    UI.ShowAnimation(STATE.scene)
   end)
 
   local r = CanvasRenderer.new()
 
-  STATE:add_dock(function()
-    if imgui.Begin "RenderTarget" then
-      local size = imgui.GetContentRegionAvail()
-      local canvas = r:render(size.x, size.y)
+  STATE.docking_space:add("RenderTarget", function()
+    local size = imgui.GetContentRegionAvail()
+    local canvas = r:render(size.x, size.y)
 
-      if STATE.scene then
-        local camera = STATE.camera
-        canvas:renderTo(function()
-          love.graphics.clear({ 0, 25, 25, 0 }, 0, 1)
-          STATE.scene:draw(camera.view, camera.projection)
-        end)
-      end
-
-      ui.DraggableImage("image_button", canvas, size)
+    if STATE.scene then
+      local camera = STATE.camera
+      canvas:renderTo(function()
+        love.graphics.clear({ 0, 25, 25, 0 }, 0, 1)
+        STATE.scene:draw(camera.view, camera.projection)
+      end)
     end
-    imgui.End()
+
+    UI.DraggableImage("image_button", canvas, size)
   end)
 
   if os.getenv "LOCAL_LUA_DEBUGGER_VSCODE" == "1" then
-    STATE:add_dock(function()
-      -- example window
-      imgui.ShowDemoWindow()
-    end)
+    STATE.docking_space:add("imgui demo", imgui.ShowDemoWindow, true)
   end
 end
 
