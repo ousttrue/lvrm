@@ -23,7 +23,6 @@ State.__index = State
 function State.new()
   ---@class StateInstance
   local instance = {
-    camera = Camera.new(),
     docking_space = DockingSpace.new "DOCKSPACE",
   }
   ---@type State
@@ -43,11 +42,7 @@ function State:load(path)
 end
 
 function State:draw()
-  local w, h = self.docking_space:begin()
-  self.camera.screen_width = w
-  self.camera.screen_height = h
-  self.camera:calc_matrix()
-
+  self.docking_space:begin()
   self.docking_space:draw()
 end
 
@@ -71,9 +66,11 @@ local STATE = State.new()
 love.load = function(args)
   imgui.love.Init() -- or imgui.love.Init("RGBA32") or imgui.love.Init("Alpha8")
 
-  local io = imgui.GetIO()
-  -- Enable Docking
-  io.ConfigFlags = bit.bor(io.ConfigFlags, imgui.ImGuiConfigFlags_DockingEnable)
+  do
+    local io = imgui.GetIO()
+    -- Enable Docking
+    io.ConfigFlags = bit.bor(io.ConfigFlags, imgui.ImGuiConfigFlags_DockingEnable)
+  end
 
   local data = util.readfile "C:/Windows/Fonts/meiryo.ttc"
   if data then
@@ -102,20 +99,37 @@ love.load = function(args)
   end)
 
   local r = CanvasRenderer.new()
+  local camera = Camera.new()
 
   STATE.docking_space:add("RenderTarget", function()
+    -- update canvas size
     local size = imgui.GetContentRegionAvail()
     local canvas = r:render(size.x, size.y)
+    local isActive, isHovered = UI.DraggableImage("image_button", canvas, size)
+
+    -- update camera
+    local io = imgui.GetIO()
+    if isActive then
+      if io.MouseDown[imgui.ImGuiMouseButton_Right] then
+        camera:yawpitch(io.MouseDelta.x, io.MouseDelta.y)
+      end
+      if io.MouseDown[imgui.ImGuiMouseButton_Middle] then
+        camera:shift(io.MouseDelta.x, io.MouseDelta.y)
+      end
+    end
+    if isHovered then
+      camera:dolly(io.MouseWheel)
+    end
+    camera.screen_width = size.x
+    camera.screen_height = size.y
+    camera:calc_matrix()
 
     if STATE.scene then
-      local camera = STATE.camera
       canvas:renderTo(function()
-        love.graphics.clear({ 0, 25, 25, 0 }, 0, 1)
+        love.graphics.clear({ 0, 0.2, 0.2, 0 }, 0, 0)
         STATE.scene:draw(camera.view, camera.projection)
       end)
     end
-
-    UI.DraggableImage("image_button", canvas, size)
   end)
 
   if os.getenv "LOCAL_LUA_DEBUGGER_VSCODE" == "1" then
@@ -143,18 +157,18 @@ love.mousemoved = function(x, y, ...)
     local io = imgui.GetIO()
     local is_ctrl = imgui.IsKeyDown_Nil(imgui.ImGuiKey_LeftCtrl) or imgui.IsKeyDown_Nil(imgui.ImGuiKey_RightCtrl)
     if io.MouseDown[imgui.ImGuiMouseButton_Right] then
-      if is_ctrl then
-        STATE.camera:dolly(-io.MouseDelta.y)
-      else
-        STATE.camera:yawpitch(io.MouseDelta.x, io.MouseDelta.y)
-      end
+      -- if is_ctrl then
+      --   STATE.camera:dolly(-io.MouseDelta.y)
+      -- else
+      --   STATE.camera:yawpitch(io.MouseDelta.x, io.MouseDelta.y)
+      -- end
     end
     if io.MouseDown[imgui.ImGuiMouseButton_Middle] then
-      if is_ctrl then
-        STATE.camera:dolly(-io.MouseDelta.y)
-      else
-        STATE.camera:shift(io.MouseDelta.x, io.MouseDelta.y)
-      end
+      -- if is_ctrl then
+      --   STATE.camera:dolly(-io.MouseDelta.y)
+      -- else
+      --   STATE.camera:shift(io.MouseDelta.x, io.MouseDelta.y)
+      -- end
     end
   end
 end
@@ -177,7 +191,7 @@ love.wheelmoved = function(x, y)
   imgui.love.WheelMoved(x, y)
   if not imgui.love.GetWantCaptureMouse() then
     -- your code here
-    STATE.camera:dolly(y)
+    -- STATE.camera:dolly(y)
   end
 end
 

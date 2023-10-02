@@ -270,6 +270,8 @@ end
 ---@param id string
 ---@param texture love.Texture
 ---@param size falg.Float2
+---@return boolean isActive
+---@return boolean isHover
 function M.DraggableImage(id, texture, size)
   imgui.ImageButton(id, texture, size, { 0, 1 }, { 1, 0 }, { 1, 1, 1, 1 }, { 1, 1, 1, 1 })
   imgui.ButtonBehavior(
@@ -289,7 +291,8 @@ CanvasRenderer.__index = CanvasRenderer
 function CanvasRenderer.new()
   ---@class CanvasRendererInstance
   ---@field canvas love.Canvas?
-  local instance = {}
+  local instance = {
+  }
 
   ---@type CanvasRenderer
   return setmetatable(instance, CanvasRenderer)
