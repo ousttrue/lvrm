@@ -168,7 +168,7 @@ end
 ---@param z number
 ---@param w number
 ---@return falg.Mat4 self
-function Mat4:rotation(x, y, z, w)
+function Mat4:from_quat(x, y, z, w)
   self._11 = 1 - 2 * y * y - 2 * z * z
   self._22 = 1 - 2 * z * z - 2 * x * x
   self._33 = 1 - 2 * x * x - 2 * y * y
