@@ -131,7 +131,21 @@ function DockingSpace:begin()
   local dockspace_id = imgui.GetID_Str(self.name)
   imgui.DockSpace(dockspace_id, { 0.0, 0.0 }, dockspace_flags)
 
+  self:show_menu()
+
   return size.x, size.y
+end
+
+function DockingSpace:show_menu()
+  if imgui.BeginMenuBar() then
+    if imgui.BeginMenu "docking" then
+      for _, dock in ipairs(self.docks) do
+        imgui.MenuItem_BoolPtr(dock.name, nil, dock.p_open)
+      end
+      imgui.EndMenu()
+    end
+    imgui.EndMainMenuBar()
+  end
 end
 
 function DockingSpace:draw()

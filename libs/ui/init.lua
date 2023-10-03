@@ -67,7 +67,11 @@ local function traverse_json(jsonpath, prop, node)
         imgui.TextUnformatted(string.format("[%d]", #node))
       else
         -- dict
-        imgui.TextUnformatted "{}"
+        if node.name then
+          imgui.TextUnformatted("{" .. node.name .. "}")
+        else
+          imgui.TextUnformatted "{}"
+        end
       end
     end
     imgui.PopID()
