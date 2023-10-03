@@ -1,5 +1,5 @@
 local ffi = require "ffi"
-local falg = require "libs.falg"
+local falg = require "falg"
 
 ---@class lvrm.Node: lvrm.NodeInstance
 local Node = {}
@@ -17,8 +17,10 @@ function Node.new(name)
     name = name,
     ---@type lvrm.Node[]
     children = {},
-    ---@type falg.Mat4
-    local_matrix = falg.Mat4():identity(),
+
+    ---@type falg.EuclideanTransform
+    local_transform = falg.EuclideanTransform.new(),
+    local_scale = falg.Float3(1, 1, 1),
   }
   ---@type lvrm.Node
   return setmetatable(instance, Node)

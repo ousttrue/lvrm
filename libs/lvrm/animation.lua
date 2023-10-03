@@ -56,7 +56,7 @@ function Animation.load(gltf_animation)
   return Animation.new(gltf_animation.name)
 end
 
----@param target string
+---@param target gltf.AnimationChannelTarget
 ---@param count integer time[n] and values[n]
 ---@param time ffi.cdata* float*
 ---@param values ffi.cdata*
