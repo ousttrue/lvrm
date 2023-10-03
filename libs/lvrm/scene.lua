@@ -149,15 +149,26 @@ function Scene:draw(view, projection)
 end
 
 ---@param seconds number
-function Scene:set_time(seconds)
+---@param loop boolean
+function Scene:set_time(seconds, loop)
   if not self.active_animation then
     return
+  end
+
+  if loop then
+    while seconds > self.active_animation.duration do
+      seconds = seconds - self.active_animation.duration
+    end
   end
 
   for _, curve in ipairs(self.active_animation.curves) do
     local node = self.nodes[curve.target.node + 1] --0to1origin
     if curve.target.path == "rotation" then
-      -- TODO:
+      local value = curve:from_time(seconds)
+      if value then
+        -- Float4*
+        node.local_transform.rotation = falg.Quat(value.X, value.Y, value.Z, value.W)
+      end
     else
       assert(false, curve.target.path, "not implemented")
     end

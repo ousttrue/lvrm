@@ -116,7 +116,7 @@ love.load = function(args)
 
       -- render scene to rendertarget
       if STATE.scene then
-        STATE.scene:set_time(STATE.time.seconds)
+        STATE.scene:set_time(STATE.time.seconds, STATE.time.loop[0])
 
         r:render(function()
           STATE.scene:draw(camera.view, camera.projection)

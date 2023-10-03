@@ -19,8 +19,7 @@ function Time.new()
   return setmetatable(instance, Time)
 end
 
----@param delta number seconds
-function Time:update(delta)
+function Time:update()
   if self.is_play[0] then -- 0origin
     local io = imgui.GetIO()
     self.seconds = self.seconds + io.DeltaTime
