@@ -1,4 +1,5 @@
 local ffi = require "ffi"
+local bit = require "bit"
 ---@class cimgui
 local imgui = require "cimgui"
 
@@ -11,25 +12,53 @@ Dock.__index = Dock
 
 ---@param name string
 ---@param draw function
+---@param include_begin boolean
 ---@return Dock
-function Dock.new(name, draw)
-  local p_open = ffi.new("bool[1]", true)
-
+function Dock.new(name, draw, include_begin)
   ---@class DockInstance
-  ---@field draw function
+  ---@field draw_callback function
   local instance = {
     name = name,
-    p_open = p_open,
-    draw_callback = draw,
+    p_open = ffi.new("bool[1]", true),
+    window_flags = 0,
+    window_styles = {},
   }
+
+  if include_begin then
+    instance.draw_callback = draw
+  else
+    instance.draw_callback = function(p_open)
+      for _, s in ipairs(instance.window_styles) do
+        s()
+      end
+      local is_begin = imgui.Begin(name, p_open, instance.window_flags)
+      imgui.PopStyleVar(#instance.window_styles)
+
+      if is_begin then
+        draw()
+      end
+      imgui.End()
+    end
+  end
 
   ---@type Dock
   return setmetatable(instance, Dock)
 end
 
-function Dock:no_padding() end
+---@return Dock
+function Dock:no_padding()
+  table.insert(self.window_styles, function()
+    imgui.PushStyleVar_Vec2(imgui.ImGuiStyleVar_WindowPadding, { 0.0, 0.0 })
+  end)
+  return self
+end
 
-function Dock:no_scrollbar() end
+---@return Dock
+function Dock:no_scrollbar()
+  self.window_flags =
+    bit.bor(self.window_flags, imgui.ImGuiWindowFlags_NoScrollbar, imgui.ImGuiWindowFlags_NoScrollWithMouse)
+  return self
+end
 
 function Dock:draw()
   if self.p_open[0] then
@@ -63,21 +92,7 @@ end
 ---@return Dock
 function DockingSpace:add(name, draw, include_begin)
   local dock
-  if include_begin then
-    dock = Dock.new(name, draw)
-  else
-    local wrap = function(p_open)
-      imgui.PushStyleVar_Vec2(imgui.ImGuiStyleVar_WindowPadding, { 0.0, 0.0 })
-      local is_begin = imgui.Begin(name, p_open)
-      imgui.PopStyleVar()
-
-      if is_begin then
-        draw()
-      end
-      imgui.End()
-    end
-    dock = Dock.new(name, wrap)
-  end
+  dock = Dock.new(name, draw, include_begin)
   table.insert(self.docks, dock)
   return dock
 end

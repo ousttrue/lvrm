@@ -7,8 +7,11 @@ package.path = package.cpath
 
 local falg = require "falg"
 local lvrm_reader = require "lvrm.gltf_reader"
+local RenderTarget = require "lvrm.rendertarget"
+
 local UI = require "ui"
 local DockingSpace = require "ui.docking_space"
+
 local util = require "lvrm.util"
 local Scene = require "lvrm.scene"
 local Camera = require "lvrm.camera"
@@ -82,55 +85,65 @@ love.load = function(args)
 
   STATE:load(args[1])
 
-  STATE.docking_space:add("glTF", function()
-    UI.ShowJson(STATE.json_root)
-  end)
+  STATE.docking_space
+    :add("glTF", function()
+      UI.ShowJson(STATE.json_root)
+    end)
+    :no_padding()
 
-  STATE.docking_space:add("scene", function()
-    UI.ShowScene(STATE.scene)
-  end)
+  STATE.docking_space
+    :add("scene", function()
+      UI.ShowScene(STATE.scene)
+    end)
+    :no_padding()
 
-  STATE.docking_space:add("mesh", function()
-    UI.ShowMesh(STATE.json_root, STATE.scene)
-  end)
+  STATE.docking_space
+    :add("mesh", function()
+      UI.ShowMesh(STATE.json_root, STATE.scene)
+    end)
+    :no_padding()
 
-  STATE.docking_space:add("animation", function()
-    UI.ShowAnimation(STATE.scene)
-  end)
+  STATE.docking_space
+    :add("animation", function()
+      UI.ShowAnimation(STATE.scene)
+    end)
+    :no_padding()
 
-  local r = CanvasRenderer.new()
+  local r = RenderTarget.new()
   local camera = Camera.new()
 
-  STATE.docking_space:add("RenderTarget", function()
-    -- update canvas size
-    local size = imgui.GetContentRegionAvail()
-    local canvas = r:render(size.x, size.y)
-    local isActive, isHovered = UI.DraggableImage("image_button", canvas, size)
+  STATE.docking_space
+    :add("RenderTarget", function()
+      -- update canvas size
+      local size = imgui.GetContentRegionAvail()
+      r:update_size(size.x, size.y)
+      local isActive, isHovered = UI.DraggableImage("image_button", r.colorcanvas, size)
 
-    -- update camera
-    local io = imgui.GetIO()
-    if isActive then
-      if io.MouseDown[imgui.ImGuiMouseButton_Right] then
-        camera:yawpitch(io.MouseDelta.x, io.MouseDelta.y)
+      -- update camera
+      local io = imgui.GetIO()
+      if isActive then
+        if io.MouseDown[imgui.ImGuiMouseButton_Right] then
+          camera:yawpitch(io.MouseDelta.x, io.MouseDelta.y)
+        end
+        if io.MouseDown[imgui.ImGuiMouseButton_Middle] then
+          camera:shift(io.MouseDelta.x, io.MouseDelta.y)
+        end
       end
-      if io.MouseDown[imgui.ImGuiMouseButton_Middle] then
-        camera:shift(io.MouseDelta.x, io.MouseDelta.y)
+      if isHovered then
+        camera:dolly(io.MouseWheel)
       end
-    end
-    if isHovered then
-      camera:dolly(io.MouseWheel)
-    end
-    camera.screen_width = size.x
-    camera.screen_height = size.y
-    camera:calc_matrix()
+      camera.screen_width = size.x
+      camera.screen_height = size.y
+      camera:calc_matrix()
 
-    if STATE.scene then
-      canvas:renderTo(function()
-        love.graphics.clear({ 0, 0.2, 0.2, 0 }, 0, 0)
-        STATE.scene:draw(camera.view, camera.projection)
-      end)
-    end
-  end)
+      if STATE.scene then
+        r:render(function()
+          STATE.scene:draw(camera.view, camera.projection)
+        end)
+      end
+    end)
+    :no_padding()
+    :no_scrollbar()
 
   if os.getenv "LOCAL_LUA_DEBUGGER_VSCODE" == "1" then
     STATE.docking_space:add("imgui demo", imgui.ShowDemoWindow, true)

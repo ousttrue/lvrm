@@ -273,41 +273,16 @@ end
 ---@return boolean isActive
 ---@return boolean isHover
 function M.DraggableImage(id, texture, size)
+  -- imgui.PushStyleVar_Float(imgui.ImGuiStyleVar_FrameBorderSize, 0.0)
+  imgui.PushStyleVar_Vec2(imgui.ImGuiStyleVar_FramePadding, { 0, 0 })
   imgui.ImageButton(id, texture, size, { 0, 1 }, { 1, 0 }, { 1, 1, 1, 1 }, { 1, 1, 1, 1 })
+  imgui.PopStyleVar()
   imgui.ButtonBehavior(
     imgui.GetCurrentContext().LastItemData.Rect,
     imgui.GetCurrentContext().LastItemData.ID,
     bit.bor(imgui.ImGuiButtonFlags_MouseButtonMiddle, imgui.ImGuiButtonFlags_MouseButtonRight)
   )
-
   return imgui.IsItemActive(), imgui.IsItemHovered()
 end
-
----@class CanvasRenderer: CanvasRendererInstance
-CanvasRenderer = {}
-CanvasRenderer.__index = CanvasRenderer
-
----@return CanvasRenderer
-function CanvasRenderer.new()
-  ---@class CanvasRendererInstance
-  ---@field canvas love.Canvas?
-  local instance = {
-  }
-
-  ---@type CanvasRenderer
-  return setmetatable(instance, CanvasRenderer)
-end
-
----@param w integer
----@param h integer
----@return love.Canvas
-function CanvasRenderer:render(w, h)
-  if not self.canvas or self.canvas:getWidth() ~= w or self.canvas:getHeight() ~= h then
-    self.canvas = love.graphics.newCanvas(w, h)
-  end
-  return self.canvas
-end
-
-M.CanvasRenderer = CanvasRenderer
 
 return M

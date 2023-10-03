@@ -31,13 +31,26 @@ function Scene.new()
   return setmetatable(instance, Scene)
 end
 
+local WRAP_MAP = {
+  [33071] = "clamp",
+  [33648] = "mirroredrepeat",
+  [10497] = "repeat",
+}
+-- clamp"|"clampzero"|"mirroredrepeat"|"repeat
+
 ---@param bytes string
+---@param sampler gltf.Sampler?
 ---@return love.Texture
-local function load_texture(bytes)
+local function load_texture(bytes, sampler)
   local data = love.data.newByteData(bytes)
   local image = love.image.newImageData(data)
   local texture = love.graphics.newImage(image)
   image:release()
+
+  if sampler then
+    texture:setWrap(WRAP_MAP[sampler.wrapS], WRAP_MAP[sampler.wrapT])
+  end
+
   return texture
 end
 
@@ -50,7 +63,11 @@ function Scene.load(reader)
   if reader.root.textures then
     for _, gltf_texture in ipairs(reader.root.textures) do
       local image_bytes = reader:read_image_bytes(gltf_texture.source)
-      local texture = load_texture(image_bytes)
+      local gltf_samler
+      if gltf_texture.sampler then
+        gltf_samler = reader.root.samplers[gltf_texture.sampler + 1] -- 1origin
+      end
+      local texture = load_texture(image_bytes, gltf_samler)
       table.insert(scene.textures, texture)
     end
   end
@@ -124,7 +141,6 @@ end
 ---@param projection falg.Mat4
 function Scene:draw(view, projection)
   love.graphics.push "all"
-  love.graphics.setDepthMode("lequal", true)
   for _, n in ipairs(self.root_nodes) do
     n:draw_recursive(IDENTITY, view, projection)
   end

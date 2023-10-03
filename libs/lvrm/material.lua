@@ -6,7 +6,7 @@ local lvrm_shader = require "lvrm.shader"
 local Material = {}
 
 ---@param name string
----@param shader love.Shader
+---@param shader love.Shader | string
 ---@return lvrm.Material
 function Material.new(name, shader)
   if type(shader) == "string" then
@@ -42,6 +42,9 @@ end
 
 function Material:use()
   love.graphics.setShader(self.shader)
+  love.graphics.setFrontFaceWinding "cw"
+  love.graphics.setMeshCullMode "back"
+  love.graphics.setDepthMode("lequal", true)
 end
 
 local MAT4_SIZE = ffi.sizeof "Mat4"

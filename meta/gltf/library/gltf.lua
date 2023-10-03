@@ -48,6 +48,13 @@ local GltfAccessor_Type = {
   MAT4 = "MAT4",
 }
 
+---@enum gltf.Sampler_Wrap
+local Sampler_Wrap = {
+  CLAMP_TO_EDGE = 33071,
+  MIRRORED_REPEAT = 33648,
+  REPEAT = 10497,
+}
+
 ---https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/schema/accessor.schema.json
 ---@class gltf.Accessor: gltf.ChildOfRootProperty
 ---@field bufferView integer?
@@ -63,8 +70,8 @@ local GltfAccessor_Type = {
 ---@class gltf.Sampler: gltf.ChildOfRootProperty
 ---@field magFilter integer [9728:NEAREST, 9729:LINEAR]
 ---@field minFilter integer [9728:NEAREST, 9729:LINEAR, 9984:NEAREST_MIPMAP_NEAREST, 9985:LINEAR_MIPMAP_NEAREST, 9986:NEAREST_MIPMAP_LINEAR, 9987:LINEAR_MIPMAP_LINEAR]
----@field wrapS integer [33071:CLAMP_TO_EDGE, 33648:MIRRORED_REPEAT, 10497:REPEAT]
----@field wrapT integer [33071:CLAMP_TO_EDGE, 33648:MIRRORED_REPEAT, 10497:REPEAT]
+---@field wrapS gltf.Sampler_Wrap
+---@field wrapT gltf.Sampler_Wrap
 
 ---@class gltf.Image: gltf.ChildOfRootProperty
 ---@field uri string?
