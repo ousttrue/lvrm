@@ -8,6 +8,7 @@ package.path = package.cpath
 local falg = require "falg"
 local lvrm_reader = require "lvrm.gltf_reader"
 local RenderTarget = require "lvrm.rendertarget"
+local Time = require "ui.time"
 
 local UI = require "ui"
 local DockingSpace = require "ui.docking_space"
@@ -27,6 +28,7 @@ function State.new()
   ---@class StateInstance
   local instance = {
     docking_space = DockingSpace.new "DOCKSPACE",
+    time = Time.new(),
   }
   ---@type State
   return setmetatable(instance, State)
@@ -45,22 +47,9 @@ function State:load(path)
 end
 
 function State:draw()
+  self.time:update()
   self.docking_space:begin()
   self.docking_space:draw()
-end
-
-local function make_texture()
-  -- Create some buffer with size 2x2.
-  local image = love.image.newImageData(2, 2)
-
-  -- Update certain pixels:
-  image:setPixel(0, 1, 128, 0, 0, 255)
-
-  local texture = love.graphics.newImage(image)
-  image:release()
-
-  -- Texture will update automatically if changed.
-  return texture
 end
 
 local STATE = State.new()
@@ -109,9 +98,12 @@ love.load = function(args)
     end)
     :no_padding()
 
+  STATE.docking_space:add("time", function()
+    STATE.time:show()
+  end)
+
   local r = RenderTarget.new()
   local camera = Camera.new()
-
   STATE.docking_space
     :add("RenderTarget", function()
       -- update canvas size
@@ -120,23 +112,12 @@ love.load = function(args)
       local isActive, isHovered = UI.DraggableImage("image_button", r.colorcanvas, size)
 
       -- update camera
-      local io = imgui.GetIO()
-      if isActive then
-        if io.MouseDown[imgui.ImGuiMouseButton_Right] then
-          camera:yawpitch(io.MouseDelta.x, io.MouseDelta.y)
-        end
-        if io.MouseDown[imgui.ImGuiMouseButton_Middle] then
-          camera:shift(io.MouseDelta.x, io.MouseDelta.y)
-        end
-      end
-      if isHovered then
-        camera:dolly(io.MouseWheel)
-      end
-      camera.screen_width = size.x
-      camera.screen_height = size.y
-      camera:calc_matrix()
+      camera:update(size.x, size.y, isActive, isHovered)
 
+      -- render scene to rendertarget
       if STATE.scene then
+        STATE.scene:set_time(STATE.time.seconds)
+
         r:render(function()
           STATE.scene:draw(camera.view, camera.projection)
         end)
@@ -167,22 +148,6 @@ love.mousemoved = function(x, y, ...)
   imgui.love.MouseMoved(x, y)
   if not imgui.love.GetWantCaptureMouse() then
     -- your code here
-    local io = imgui.GetIO()
-    local is_ctrl = imgui.IsKeyDown_Nil(imgui.ImGuiKey_LeftCtrl) or imgui.IsKeyDown_Nil(imgui.ImGuiKey_RightCtrl)
-    if io.MouseDown[imgui.ImGuiMouseButton_Right] then
-      -- if is_ctrl then
-      --   STATE.camera:dolly(-io.MouseDelta.y)
-      -- else
-      --   STATE.camera:yawpitch(io.MouseDelta.x, io.MouseDelta.y)
-      -- end
-    end
-    if io.MouseDown[imgui.ImGuiMouseButton_Middle] then
-      -- if is_ctrl then
-      --   STATE.camera:dolly(-io.MouseDelta.y)
-      -- else
-      --   STATE.camera:shift(io.MouseDelta.x, io.MouseDelta.y)
-      -- end
-    end
   end
 end
 

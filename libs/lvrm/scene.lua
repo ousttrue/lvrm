@@ -12,7 +12,8 @@ Scene.__index = Scene
 
 ---@return lvrm.Scene
 function Scene.new()
-  ---@class  lvrm.SceneInstance
+  ---@class lvrm.SceneInstance
+  ---@field active_animation lvrm.Animation
   local instance = {
     ---@type love.Texture[]
     textures = {},
@@ -65,7 +66,7 @@ function Scene.load(reader)
       local image_bytes = reader:read_image_bytes(gltf_texture.source)
       local gltf_samler
       if gltf_texture.sampler then
-        gltf_samler = reader.root.samplers[gltf_texture.sampler + 1] -- 1origin
+        gltf_samler = reader.root.samplers[gltf_texture.sampler + 1] --0to1origin
       end
       local texture = load_texture(image_bytes, gltf_samler)
       table.insert(scene.textures, texture)
@@ -94,7 +95,7 @@ function Scene.load(reader)
       local node = Node.load(gltf_node, string.format("__node__:02d", i))
 
       if gltf_node.mesh then
-        node.mesh = scene.meshes[gltf_node.mesh + 1] -- 1origin
+        node.mesh = scene.meshes[gltf_node.mesh + 1] --0to1origin
       end
 
       table.insert(scene.nodes, node)
@@ -105,7 +106,7 @@ function Scene.load(reader)
       local node = scene.nodes[i]
       if gltf_node.children then
         for _, c in ipairs(gltf_node.children) do
-          local child = scene.nodes[c + 1] -- 1origin
+          local child = scene.nodes[c + 1] --0to1origin
           node:add_child(child)
         end
       end
@@ -124,11 +125,11 @@ function Scene.load(reader)
     for i, gltf_animation in ipairs(reader.root.animations) do
       local animation = Animation.load(gltf_animation)
       for j, gltf_channel in ipairs(gltf_animation.channels) do
-        local gltf_sampler = gltf_animation.samplers[gltf_channel.sampler + 1] --1origin
+        local gltf_sampler = gltf_animation.samplers[gltf_channel.sampler + 1] --0to1origin
         local time = reader:read_accessor_bytes(gltf_sampler.input)
-        local values = reader:read_accessor_bytes(gltf_sampler.output)
+        local values, count, stride = reader:read_accessor_bytes(gltf_sampler.output)
 
-        animation:AddCurve(gltf_channel.target, time, values)
+        animation:AddCurve(gltf_channel.target, count, time, values, stride)
       end
       table.insert(scene.animations, animation)
     end
@@ -145,6 +146,22 @@ function Scene:draw(view, projection)
     n:draw_recursive(IDENTITY, view, projection)
   end
   love.graphics.pop()
+end
+
+---@param seconds number
+function Scene:set_time(seconds)
+  if not self.active_animation then
+    return
+  end
+
+  for _, curve in ipairs(self.active_animation.curves) do
+    local node = self.nodes[curve.target.node + 1] --0to1origin
+    if curve.target.path == "rotation" then
+      -- TODO:
+    else
+      assert(false, curve.target.path, "not implemented")
+    end
+  end
 end
 
 return Scene

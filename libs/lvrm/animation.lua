@@ -4,15 +4,30 @@ local ffi = require "ffi"
 local AnimationCurve = {}
 AnimationCurve.__index = AnimationCurve
 
+---@param target gltf.AnimationChannelTarget
+---@param count integer time[n] and values[n]
+---@param time ffi.cdata* float[]
+---@param values ffi.cdata* T[]
+---@param stride integer value stride
 ---@return lvrm.AnimationCurve
-function AnimationCurve.new()
+function AnimationCurve.new(target, count, time, values, stride)
   ---@class lvrm.AnimationCurveInstance
-  local instance = {}
+  local instance = {
+    target = target,
+    count = count,
+    time = time,
+    values = values,
+    value_stride = stride,
+    duration = time[count - 1], -- 0origin
+  }
 
   ---@type lvrm.AnimationCurve
   return setmetatable(instance, AnimationCurve)
 end
 
+---
+--- Animation
+---
 ---@class lvrm.Animation: lvrm.AnimationInstance
 local Animation = {}
 Animation.__index = Animation
@@ -42,12 +57,13 @@ function Animation.load(gltf_animation)
 end
 
 ---@param target string
+---@param count integer time[n] and values[n]
 ---@param time ffi.cdata* float*
 ---@param values ffi.cdata*
-function Animation:AddCurve(target, time, values)
-  local curve = AnimationCurve.new()
+---@param stride integer value stride
+function Animation:AddCurve(target, count, time, values, stride)
+  local curve = AnimationCurve.new(target, count, time, values, stride)
   table.insert(self.curves, curve)
-  self.curve_map[target] = curve
 end
 
 return Animation

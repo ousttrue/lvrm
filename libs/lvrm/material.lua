@@ -2,6 +2,20 @@ require "falg"
 local ffi = require "ffi"
 local lvrm_shader = require "lvrm.shader"
 
+local function make_texture()
+  -- Create some buffer with size 2x2.
+  local image = love.image.newImageData(2, 2)
+
+  -- Update certain pixels:
+  image:setPixel(0, 1, 128, 0, 0, 255)
+
+  local texture = love.graphics.newImage(image)
+  image:release()
+
+  -- Texture will update automatically if changed.
+  return texture
+end
+
 ---@class lvrm.Material:lvrm.MaterialInstance
 local Material = {}
 
