@@ -56,22 +56,33 @@ local function traverse_json(jsonpath, prop, node)
     if t == "nil" then
       imgui.TextUnformatted "nil"
     elseif t == "boolean" then
-      imgui.Checkbox("", node)
+      if node then
+        imgui.TextUnformatted "true"
+      else
+        imgui.TextUnformatted "false"
+      end
     elseif t == "number" then
       imgui.Text("%f", node)
     elseif t == "string" then
-      imgui.TextUnformatted(node)
+      imgui.TextUnformatted('"' .. node .. '"')
     elseif t == "table" then
       if node[1] then
         -- array
         imgui.TextUnformatted(string.format("[%d]", #node))
       else
         -- dict
-        if node.name then
-          imgui.TextUnformatted("{" .. node.name .. "}")
-        else
-          imgui.TextUnformatted "{}"
+        local name = node.name
+        if not name then
+          name = node.type
         end
+        if not name then
+          name = node.bone
+        end
+        if not name then
+          name = ""
+        end
+
+        imgui.TextUnformatted("{" .. name .. "}")
       end
     end
     imgui.PopID()
@@ -88,9 +99,16 @@ local function traverse_json(jsonpath, prop, node)
         end
       else
         -- dict
+        local tmp = {}
         for child_prop, v in pairs(node) do
-          local child_jsonpath = jsonpath .. "." .. child_prop
-          traverse_json(child_jsonpath, child_prop, v)
+          table.insert(tmp, { child_prop, v })
+        end
+        table.sort(tmp, function(a, b)
+          return a[1] < b[1]
+        end)
+        for _, kv in ipairs(tmp) do
+          local child_jsonpath = jsonpath .. "." .. kv[1]
+          traverse_json(child_jsonpath, kv[1], kv[2])
         end
       end
     end
