@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug Custom Lua Environment",
+            "name": "Load glb",
             "type": "lua-local",
             "request": "launch",
             "program": {
@@ -14,9 +14,20 @@
             "args": [
                 "${workspaceFolder}",
                 // "${env:GLTF_SAMPLE_MODELS}/2.0/Box/glTF-Binary/Box.glb",
-                // "${env:GLTF_SAMPLE_MODELS}/2.0/CesiumMilkTruck/glTF-Binary/CesiumMilkTruck.glb",
-                "${env:GLTF_SAMPLE_MODELS}/2.0/AnimatedTriangle/glTF/AnimatedTriangle.gltf",
+                "${env:GLTF_SAMPLE_MODELS}/2.0/CesiumMilkTruck/glTF-Binary/CesiumMilkTruck.glb",
+                // "${env:GLTF_SAMPLE_MODELS}/2.0/AnimatedTriangle/glTF/AnimatedTriangle.gltf",
             ]
-        }
+        },
+        {
+            "name": "Testing",
+            "type": "lua-local",
+            "request": "launch",
+            "program": {
+                "command": "busted"
+            },
+            "args": [
+                "tests",
+            ]
+        },
     ]
 }
