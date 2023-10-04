@@ -36,7 +36,7 @@ end
 function AnimationGui:show_animation(n, animation)
   imgui.TableNextRow()
 
-  --- num
+  -- num
   imgui.TableNextColumn()
   local flags = util.make_node_flags { is_leaf = false, is_selected = n == self.selected }
   imgui.SetNextItemOpen(true, imgui.ImGuiCond_FirstUseEver)
@@ -45,9 +45,16 @@ function AnimationGui:show_animation(n, animation)
     self.selected = n
   end
 
+  -- name
   imgui.TableNextColumn()
   if animation.name then
     imgui.TextUnformatted(animation.name)
+  end
+
+  -- duration
+  imgui.TableNextColumn()
+  if animation.duration then
+    imgui.TextUnformatted(string.format("%f", animation.duration))
   end
 
   if node_open then

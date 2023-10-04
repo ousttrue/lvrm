@@ -119,24 +119,52 @@ function MeshGui:ShowMesh(root, scene)
   end)
 end
 
-function MeshGui:ShowSelected()
+---@param scene lvrm.Scene
+function MeshGui:show_morph_targets(scene)
+  if not self.mesh then
+    return
+  end
+
+  local mesh = scene.meshes[self.mesh]
+  if not mesh then
+    return
+  end
+
+  if self.prim then
+    imgui.TextUnformatted(string.format("%s:%d", mesh.name, self.prim))
+  else
+    imgui.TextUnformatted(string.format("%s", mesh.name))
+  end
+
+  local submesh = mesh.submeshes[1]
+  if not submesh then
+    return
+  end
+
+  -- for i, m in ipairs(submesh.morph) do
+  -- end
+end
+
+---@param scene lvrm.Scene
+function MeshGui:render_selected(scene)
+  --
+end
+
+---@param scene lvrm.Scene
+function MeshGui:ShowSelected(scene)
+  if not scene then
+    return
+  end
   local size = imgui.GetContentRegionAvail()
   local sz1, sz2 = self.splitter:SplitHorizontal { size.x, size.y }
 
   imgui.BeginChild_Str("1", ffi.new("ImVec2", -1, sz1), true)
+  self:show_morph_targets(scene)
   imgui.EndChild()
   -- imgui.SameLine()
   imgui.BeginChild_Str("2", ffi.new("ImVec2", -1, sz2), true)
+  self:render_selected(scene)
   imgui.EndChild()
-  -- TODO: blendshape sliders
-  -- TODO: rende selected mesh
-  -- if self.mesh then
-  --   if self.prim then
-  --     imgui.TextUnformatted(string.format("%d-%d", self.mesh, self.prim))
-  --   else
-  --     imgui.TextUnformatted(string.format("%d", self.mesh))
-  --   end
-  -- end
 end
 
 return MeshGui

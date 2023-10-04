@@ -7,10 +7,6 @@ local ffi = require "ffi"
 local AnimationCurve = {}
 AnimationCurve.__index = AnimationCurve
 
-local STRIDE_MAP = {
-  [16] = "Float4",
-}
-
 ---@param target gltf.AnimationChannelTarget
 ---@param times Span float[]
 ---@param values Span T[]

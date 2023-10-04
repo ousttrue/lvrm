@@ -105,7 +105,7 @@ love.load = function(args)
   end)
 
   STATE.docking_space:add("selected_mesh", function()
-    STATE.mesh:ShowSelected()
+    STATE.mesh:ShowSelected(STATE.scene)
   end)
 
   local r = RenderTarget.new()

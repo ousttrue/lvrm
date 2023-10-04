@@ -41,11 +41,12 @@ local VERTEX_SIZE = ffi.sizeof "Vertex"
 local Mesh = {}
 Mesh.__index = Mesh
 
+---@param name string?
 ---@param data love.ByteData
 ---@param submeshes lvrm.SubMesh[]
 ---@param indices {data: love.ByteData, format: "uint16"|"uint32"}?
 ---@return lvrm.Mesh
-function Mesh.new(vertexformat, data, submeshes, indices)
+function Mesh.new(name, vertexformat, data, submeshes, indices)
   local lg_mesh = love.graphics.newMesh(vertexformat, data, "triangles", "static")
   if indices then
     lg_mesh:setVertexMap(indices.data, indices.format)
@@ -54,6 +55,7 @@ function Mesh.new(vertexformat, data, submeshes, indices)
   ---@class lvrm.MeshInstance
   local instance = {
     id = ffi.new "int[1]",
+    name = name and name or "",
     ---@type love.Mesh
     vertex_buffer = lg_mesh,
     ---@type lvrm.SubMesh[]
@@ -77,7 +79,7 @@ function Mesh.new_triangle()
   buffer[2].Position.X = 0
   buffer[2].Position.Y = 1
 
-  return Mesh.new(VERTEX_FORMAT, data, {
+  return Mesh.new("__triangle__", VERTEX_FORMAT, data, {
     Submesh.new(Material.new("default", "default"), 1, 3), -- 1origin
   })
 end
@@ -161,7 +163,7 @@ function Mesh.load(r, gltf_mesh, materials)
     vertex_offset = vertex_offset + positions_data.len
   end
 
-  return Mesh.new(VERTEX_FORMAT, data, submeshes, indices)
+  return Mesh.new(gltf_mesh.name, VERTEX_FORMAT, data, submeshes, indices)
 end
 
 ---@param model falg.Mat4
