@@ -23,14 +23,14 @@ end
 
 ---@param n integer
 ---@param animation lvrm.Animation
----@param selected lvrm.Animation?
+---@param selected integer?
 ---@return boolean
 local function show_animation(n, animation, selected)
   imgui.TableNextRow()
 
   --- num
   imgui.TableNextColumn()
-  local flags = util.make_node_flags { is_leaf = false, is_selected = animation == selected }
+  local flags = util.make_node_flags { is_leaf = false, is_selected = n == selected }
   imgui.SetNextItemOpen(true, imgui.ImGuiCond_FirstUseEver)
   local node_open = imgui.TreeNodeEx_Ptr(animation.id, flags, string.format("%d", n))
   local new_select = false
@@ -54,22 +54,22 @@ local function show_animation(n, animation, selected)
   return new_select
 end
 
+local selected = {}
+
 ---@param scene lvrm.Scene?
+---@return integer?
 function ShowAnimation(scene)
   if not scene then
     return
   end
   util.show_table("sceneAnimationTable", { "num", "name/target", "duration" }, function()
-    local seelcted
     for i, a in ipairs(scene.animations) do
-      if show_animation(i, a, scene.active_animation) then
-        selected = i
+      if show_animation(i, a, selected[1]) then
+        selected[1] = i
       end
     end
-    if selected then
-      scene.active_animation = scene.animations[selected]
-    end
   end)
+  return selected[1]
 end
 
 return ShowAnimation

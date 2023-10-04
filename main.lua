@@ -26,6 +26,7 @@ State.__index = State
 ---@return State
 function State.new()
   ---@class StateInstance
+  ---@field animation_selected integer
   local instance = {
     docking_space = DockingSpace.new "DOCKSPACE",
     time = Time.new(),
@@ -94,7 +95,7 @@ love.load = function(args)
 
   STATE.docking_space
     :add("animation", function()
-      UI.ShowAnimation(STATE.scene)
+      STATE.animation_selected = UI.ShowAnimation(STATE.scene)
     end)
     :no_padding()
 
@@ -116,7 +117,9 @@ love.load = function(args)
 
       -- render scene to rendertarget
       if STATE.scene then
-        STATE.scene:set_time(STATE.time.seconds, STATE.time.loop[0])
+        if STATE.animation_selected then
+          STATE.scene:set_time(STATE.time.seconds, STATE.time.loop[0], STATE.animation_selected)
+        end
 
         r:render(function()
           STATE.scene:draw(camera.view, camera.projection)

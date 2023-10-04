@@ -13,7 +13,6 @@ Scene.__index = Scene
 ---@return lvrm.Scene
 function Scene.new()
   ---@class lvrm.SceneInstance
-  ---@field active_animation lvrm.Animation
   local instance = {
     ---@type love.Texture[]
     textures = {},
@@ -150,18 +149,20 @@ end
 
 ---@param seconds number
 ---@param loop boolean
-function Scene:set_time(seconds, loop)
-  if not self.active_animation then
+---@param animation_selected number?
+function Scene:set_time(seconds, loop, animation_selected)
+  local active_animation = self.animations[animation_selected]
+  if not active_animation then
     return
   end
 
   if loop then
-    while seconds > self.active_animation.duration do
-      seconds = seconds - self.active_animation.duration
+    while seconds > active_animation.duration do
+      seconds = seconds - active_animation.duration
     end
   end
 
-  for _, curve in ipairs(self.active_animation.curves) do
+  for _, curve in ipairs(active_animation.curves) do
     local node = self.nodes[curve.target.node + 1] --0to1origin
     if curve.target.path == "rotation" then
       local value = curve:from_time(seconds)

@@ -51,7 +51,9 @@ function Node.load(gltf_node, default_name)
       node.local_transform.rotation = falg.Quat(unpack(gltf_node.rotation))
     end
     if gltf_node.scale then
-      node.local_scale = falg.Float3(unpack(gltf_node.scale))
+      if gltf_node.scale[1] ~= 1 or gltf_node.scale[2] ~= 1 or gltf_node.scale[3] ~= 1 then
+        node.local_scale = falg.Float3(unpack(gltf_node.scale))
+      end
     end
   end
 
