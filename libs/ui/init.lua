@@ -3,10 +3,10 @@ local bit = require "bit"
 local imgui = require "cimgui"
 
 local M = {
-  ShowMesh = require "ui.mesh",
   ShowJson = require "ui.gltf_json",
   ShowScene = require "ui.scene",
-  ShowAnimation = require "ui.animation",
+  MeshGui = require "ui.mesh",
+  AnimationGui = require "ui.animation",
 }
 
 ---

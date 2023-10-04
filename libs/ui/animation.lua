@@ -3,12 +3,22 @@ local bit = require "bit"
 ---@class cimgui
 local imgui = require "cimgui"
 
----
---- ShowAnimation
----
+---@class AnimationGui: AnimationGuiInstance
+local AnimationGui = {}
+AnimationGui.__index = AnimationGui
+
+---@return AnimationGui
+function AnimationGui.new()
+  ---@class AnimationGuiInstance
+  ---@field selected integer?
+  local instance = {}
+  ---@type AnimationGui
+  return setmetatable(instance, AnimationGui)
+end
+
 ---@param n integer
 ---@param curve lvrm.AnimationCurve
-local function show_animation_curve(n, curve)
+function AnimationGui:show_animation_curve(n, curve)
   imgui.TableNextRow()
 
   imgui.TableNextColumn()
@@ -23,19 +33,16 @@ end
 
 ---@param n integer
 ---@param animation lvrm.Animation
----@param selected integer?
----@return boolean
-local function show_animation(n, animation, selected)
+function AnimationGui:show_animation(n, animation)
   imgui.TableNextRow()
 
   --- num
   imgui.TableNextColumn()
-  local flags = util.make_node_flags { is_leaf = false, is_selected = n == selected }
+  local flags = util.make_node_flags { is_leaf = false, is_selected = n == self.selected }
   imgui.SetNextItemOpen(true, imgui.ImGuiCond_FirstUseEver)
   local node_open = imgui.TreeNodeEx_Ptr(animation.id, flags, string.format("%d", n))
-  local new_select = false
   if imgui.IsItemClicked() and not imgui.IsItemToggledOpen() then
-    new_select = true
+    self.selected = n
   end
 
   imgui.TableNextColumn()
@@ -45,31 +52,23 @@ local function show_animation(n, animation, selected)
 
   if node_open then
     for i, c in ipairs(animation.curves) do
-      show_animation_curve(i, c)
+      self:show_animation_curve(i, c)
     end
 
     imgui.TreePop()
   end
-
-  return new_select
 end
 
-local selected = {}
-
 ---@param scene lvrm.Scene?
----@return integer?
-function ShowAnimation(scene)
+function AnimationGui:ShowAnimation(scene)
   if not scene then
     return
   end
   util.show_table("sceneAnimationTable", { "num", "name/target", "duration" }, function()
     for i, a in ipairs(scene.animations) do
-      if show_animation(i, a, selected[1]) then
-        selected[1] = i
-      end
+      self:show_animation(i, a)
     end
   end)
-  return selected[1]
 end
 
-return ShowAnimation
+return AnimationGui

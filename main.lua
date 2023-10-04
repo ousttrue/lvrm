@@ -26,10 +26,11 @@ State.__index = State
 ---@return State
 function State.new()
   ---@class StateInstance
-  ---@field animation_selected integer
   local instance = {
     docking_space = DockingSpace.new "DOCKSPACE",
     time = Time.new(),
+    mesh = UI.MeshGui.new(),
+    animation = UI.AnimationGui.new(),
   }
   ---@type State
   return setmetatable(instance, State)
@@ -89,18 +90,22 @@ love.load = function(args)
 
   STATE.docking_space
     :add("mesh", function()
-      UI.ShowMesh(STATE.json_root, STATE.scene)
+      STATE.mesh:ShowMesh(STATE.json_root, STATE.scene)
     end)
     :no_padding()
 
   STATE.docking_space
     :add("animation", function()
-      STATE.animation_selected = UI.ShowAnimation(STATE.scene)
+      STATE.animation:ShowAnimation(STATE.scene)
     end)
     :no_padding()
 
   STATE.docking_space:add("time", function()
     STATE.time:show()
+  end)
+
+  STATE.docking_space:add("selected_mesh", function()
+    STATE.mesh:ShowSelected()
   end)
 
   local r = RenderTarget.new()
@@ -117,8 +122,8 @@ love.load = function(args)
 
       -- render scene to rendertarget
       if STATE.scene then
-        if STATE.animation_selected then
-          STATE.scene:set_time(STATE.time.seconds, STATE.time.loop[0], STATE.animation_selected)
+        if STATE.animation.selected then
+          STATE.scene:set_time(STATE.time.seconds, STATE.time.loop[0], STATE.animation.selected)
         end
 
         r:render(function()
