@@ -10,17 +10,14 @@ local BIN_CHUNK_TYPE = "BIN\0"
 local Span = {}
 Span.__index = Span
 
----@param ptr ffi.cdata* uint8_t*
----@param len integer bytesize
----@param stride integer?
+---@param ptr ffi.cdata* T*
+---@param len integer T count
 ---@return Span
-function Span.new(ptr, len, stride)
+function Span.new(ptr, len)
   ---@class SpanInstance
   local instance = {
     ptr = ptr,
     len = len,
-    ---@type integer
-    stride = (stride and stride or 1),
   }
   ---@type Span
   return setmetatable(instance, Span)
@@ -35,11 +32,10 @@ end
 
 ---@param t string
 ---@param count integer
----@param stride integer
 ---@retun Span
-function Span:cast(t, count, stride)
+function Span:cast(t, count)
   local ct = t .. "*"
-  return Span.new(ffi.cast(ct, self.ptr), count, stride)
+  return Span.new(ffi.cast(ct, self.ptr), count)
 end
 
 ---@type lvrm.BytesReader
@@ -231,21 +227,21 @@ function GltfReader:read_accessor_bytes(accessor_index)
   if accessor.componentType == 5123 then
     -- short
     assert(accessor.type == "SCALAR")
-    return accessor_bytes:cast("unsigned short", accessor.count, accessor_item_size)
+    return accessor_bytes:cast("unsigned short", accessor.count)
   elseif accessor.componentType == 5125 then
     -- int
     assert(accessor.type == "SCALAR")
-    return accessor_bytes:cast("unsigned int", accessor.count, accessor_item_size)
+    return accessor_bytes:cast("unsigned int", accessor.count)
   elseif accessor.componentType == 5126 then
     -- float
     if accessor.type == "SCALAR" then
-      return accessor_bytes:cast("float", accessor.count, accessor_item_size)
+      return accessor_bytes:cast("float", accessor.count)
     elseif accessor.type == "VEC2" then
-      return accessor_bytes:cast("Float2", accessor.count, accessor_item_size)
+      return accessor_bytes:cast("Float2", accessor.count)
     elseif accessor.type == "VEC3" then
-      return accessor_bytes:cast("Float3", accessor.count, accessor_item_size)
+      return accessor_bytes:cast("Float3", accessor.count)
     elseif accessor.type == "VEC4" then
-      return accessor_bytes:cast("Float4", accessor.count, accessor_item_size)
+      return accessor_bytes:cast("Float4", accessor.count)
     else
       assert(false, "unknown type", accessor.componentType, accessor.type)
     end
