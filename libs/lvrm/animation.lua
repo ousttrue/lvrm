@@ -12,27 +12,17 @@ local STRIDE_MAP = {
 }
 
 ---@param target gltf.AnimationChannelTarget
----@param count integer time[n] and values[n]
----@param times ffi.cdata* float[]
----@param values ffi.cdata* T[]
----@param stride integer value stride
+---@param times Span float[]
+---@param values Span T[]
 ---@return lvrm.AnimationCurve
-function AnimationCurve.new(target, count, times, values, stride)
-  -- volatile? workaround
-  local time_array = ffi.new("float[?]", count)
-  ffi.copy(time_array, times, count * 4)
-  local value_array = ffi.new(STRIDE_MAP[stride] .. "[?]", count)
-  ffi.copy(value_array, values, count * stride)
-
+function AnimationCurve.new(target, times, values)
   ---@class lvrm.AnimationCurveInstance
   local instance = {
     target = target,
-    count = count,
-    times = time_array,
-    t0 = times[0], -- 0origin
-    duration = times[count - 1], -- 0origin
-    values = value_array,
-    value_stride = stride,
+    times = times,
+    t0 = times.ptr[0], -- 0origin
+    duration = times.ptr[times.len - 1], -- 0origin
+    values = values,
   }
 
   ---@type lvrm.AnimationCurve
@@ -42,18 +32,18 @@ end
 ---@param i integer 0origin
 ---@retun ffi.cdata*
 function AnimationCurve:from_frame(i)
-  return self.values[i]
+  return self.values.ptr[i]
 end
 
 ---@param seconds number
 function AnimationCurve:from_time(seconds)
   assert(seconds)
   if seconds < self.t0 then
-    return self.values[0]
+    return self.values.ptr[0]
   end
 
-  for i = 0, self.count do
-    local t = self.times[i]
+  for i = 0, self.times.len - 1 do
+    local t = self.times.ptr[i]
     assert(t)
     if t >= seconds then
       local value = self:from_frame(i)
@@ -61,7 +51,7 @@ function AnimationCurve:from_time(seconds)
     end
   end
 
-  return self.values[self.count - 1]
+  return self.values.ptr[self.times.len - 1]
 end
 
 ---
@@ -97,12 +87,10 @@ function Animation.load(gltf_animation)
 end
 
 ---@param target gltf.AnimationChannelTarget
----@param count integer time[n] and values[n]
----@param time ffi.cdata* float*
----@param values ffi.cdata*
----@param stride integer value stride
-function Animation:AddCurve(target, count, time, values, stride)
-  local curve = AnimationCurve.new(target, count, time, values, stride)
+---@param time Span float*
+---@param values Span
+function Animation:AddCurve(target, time, values)
+  local curve = AnimationCurve.new(target, time, values)
   table.insert(self.curves, curve)
   if curve.duration > self.duration then
     -- get max duration

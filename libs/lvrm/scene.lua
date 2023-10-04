@@ -1,3 +1,4 @@
+local ffi = require "ffi"
 local Material = require "lvrm.material"
 local Mesh = require "lvrm.mesh"
 local Node = require "lvrm.node"
@@ -38,11 +39,17 @@ local WRAP_MAP = {
 }
 -- clamp"|"clampzero"|"mirroredrepeat"|"repeat
 
----@param bytes string
+---@param bytes string | Span
 ---@param sampler gltf.Sampler?
 ---@return love.Texture
 local function load_texture(bytes, sampler)
-  local data = love.data.newByteData(bytes)
+  local data
+  if type(bytes) == "string" then
+    data = love.data.newByteData(bytes)
+  else
+    data = love.data.newByteData(bytes.len)
+    ffi.copy(data:getFFIPointer(), bytes.ptr, bytes.len)
+  end
   local image = love.image.newImageData(data)
   local texture = love.graphics.newImage(image)
   image:release()
@@ -58,6 +65,10 @@ end
 ---@return lvrm.Scene
 function Scene.load(reader)
   local scene = Scene.new()
+
+  -- volatile
+  -- keep ffi array
+  scene.reader = reader
 
   -- textures
   if reader.root.textures then
@@ -126,9 +137,9 @@ function Scene.load(reader)
       for j, gltf_channel in ipairs(gltf_animation.channels) do
         local gltf_sampler = gltf_animation.samplers[gltf_channel.sampler + 1] --0to1origin
         local time = reader:read_accessor_bytes(gltf_sampler.input)
-        local values, count, stride = reader:read_accessor_bytes(gltf_sampler.output)
+        local values = reader:read_accessor_bytes(gltf_sampler.output)
 
-        animation:AddCurve(gltf_channel.target, count, time, values, stride)
+        animation:AddCurve(gltf_channel.target, time, values)
       end
       table.insert(scene.animations, animation)
     end

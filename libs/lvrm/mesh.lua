@@ -138,27 +138,27 @@ function Mesh.load(r, gltf_mesh, materials)
   local index_offset = 0
   for _, p in ipairs(gltf_mesh.primitives) do
     if p.indices then
-      local indices_data, i_count = r:read_accessor_bytes(p.indices)
-      for i = 0, i_count - 1 do
-        p_indices[index_offset] = indices_data[i] + vertex_offset
+      local indices_data = r:read_accessor_bytes(p.indices)
+      for i = 0, indices_data.len - 1 do
+        p_indices[index_offset] = indices_data.ptr[i] + vertex_offset
         index_offset = index_offset + 1
       end
     end
 
     local attributes = p.attributes
-    local positions_data, v_count = r:read_accessor_bytes(attributes.POSITION)
-    for i = 0, v_count - 1 do
-      p_vertices[vertex_offset + i].Position = positions_data[i]
+    local positions_data = r:read_accessor_bytes(attributes.POSITION)
+    for i = 0, positions_data.len - 1 do
+      p_vertices[vertex_offset + i].Position = positions_data.ptr[i]
     end
 
     if attributes.TEXCOORD_0 then
       local uv_data = r:read_accessor_bytes(attributes.TEXCOORD_0)
-      for i = 0, v_count - 1 do
-        p_vertices[vertex_offset + i].TexCoord = uv_data[i]
+      for i = 0, uv_data.len - 1 do
+        p_vertices[vertex_offset + i].TexCoord = uv_data.ptr[i]
       end
     end
 
-    vertex_offset = vertex_offset + v_count
+    vertex_offset = vertex_offset + positions_data.len
   end
 
   return Mesh.new(VERTEX_FORMAT, data, submeshes, indices)
