@@ -1,5 +1,7 @@
 /cimgui/
-/cimgui.dll
 /json.lua
 /meta/cimgui/library/cimgui.lua
+
+/cimgui.dll
+/lfs.dll
 

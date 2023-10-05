@@ -12,6 +12,7 @@ local Time = require "ui.time"
 
 local UI = require "ui"
 local DockingSpace = require "ui.docking_space"
+local AssetViewer = require "ui.assetviewer"
 
 local util = require "lvrm.util"
 local Scene = require "lvrm.scene"
@@ -107,6 +108,15 @@ love.load = function(args)
   STATE.docking_space:add("selected_mesh", function()
     STATE.mesh:ShowSelected(STATE.scene)
   end)
+
+  local gltf_sample_models = os.getenv "GLTF_SAMPLE_MODELS"
+  if gltf_sample_models then
+    local asset = AssetViewer.new(gltf_sample_models .. '/2.0')
+
+    STATE.docking_space:add("gltf_sample_models", function()
+      asset:Show()
+    end)
+  end
 
   local r = RenderTarget.new()
   local camera = Camera.new()

@@ -1,7 +1,7 @@
-local util = require "ui.util"
-local bit = require "bit"
 ---@class cimgui
 local imgui = require "cimgui"
+local util = require "ui.util"
+local bit = require "bit"
 
 ---@class AnimationGui: AnimationGuiInstance
 local AnimationGui = {}
