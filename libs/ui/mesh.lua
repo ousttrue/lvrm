@@ -155,6 +155,7 @@ function MeshGui:show_morph_targets(scene)
       end
 
       imgui.TableNextColumn()
+      imgui.SetNextItemWidth(-1)
       imgui.SliderFloat(string.format("##%s", t.name), t.value, 0, 1)
     end
   end)

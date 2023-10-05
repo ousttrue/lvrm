@@ -230,15 +230,13 @@ function Mesh:draw(model, view, projection)
   if self.morphtargets then
     -- clear base mesh
     local size = ffi.sizeof(self.vertexbuffer.array)
-    local ptr = ffi.cast("MorphVertex*", self.lg_data:getFFIPointer())
+    local ptr = ffi.cast("Vertex*", self.lg_data:getFFIPointer())
     ffi.copy(ptr, self.vertexbuffer.array, size)
 
     -- add morph target
-    local total_w = 0
     for _, t in ipairs(self.morphtargets) do
       local w = t.value[0]
       if w > 0 then
-        total_w = total_w + w
         for i = 0, t.vertexbuffer:count() do
           ptr[i].Position = ptr[i].Position + t.vertexbuffer.array[i].Position:scale(w)
         end

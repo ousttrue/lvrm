@@ -128,12 +128,14 @@ love.load = function(args)
   if gltf_sample_models then
     local asset = AssetViewer.new(gltf_sample_models .. "/2.0")
 
-    STATE.docking_space:add("gltf_sample_models", function()
-      local new_path = asset:Show()
-      if new_path then
-        STATE:load(new_path.path)
-      end
-    end)
+    STATE.docking_space
+      :add("gltf_sample_models", function()
+        local new_path = asset:Show()
+        if new_path then
+          STATE:load(new_path.path)
+        end
+      end)
+      :no_padding()
   end
 
   local r = RenderTarget.new()
