@@ -49,12 +49,23 @@ function VertexBuffer.create(t, count)
   return VertexBuffer.new(array, VertexBuffer.VERTEX_FORMAT[t])
 end
 
-function VertexBuffer:to_lg_mesh()
+---@return integer
+function VertexBuffer:count()
+  return ffi.sizeof(self.array) / self:item_size()
+end
+
+---@return integer
+function VertexBuffer:item_size()
+  return ffi.sizeof(self.array[0])
+end
+
+---@param usage "static" | "dynamic" | "stream"
+function VertexBuffer:to_lg_mesh(usage)
   ---@type integer
   local size = ffi.sizeof(self.array)
   local data = love.data.newByteData(size)
   ffi.copy(data:getFFIPointer(), self.array, size)
-  return love.graphics.newMesh(self.format, data, "triangles", "static")
+  return love.graphics.newMesh(self.format, data, "triangles", usage and usage or "static")
 end
 
 ---@param offset integer

@@ -4,6 +4,9 @@ require "falg"
 local VertexBuffer = require "lvrm.vertexbuffer"
 local Material = require "lvrm.material"
 
+---
+--- MorphTarget
+---
 ---@class MorphTarget: MorphTargetInstance
 local MorphTarget = {}
 MorphTarget.__index = MorphTarget
@@ -22,6 +25,9 @@ function MorphTarget.new(name, vertex_count)
   return setmetatable(instance, MorphTarget)
 end
 
+---
+--- Submesh
+---
 ---@class lvrm.Submesh: lvrm.SubmeshInsance
 local Submesh = {}
 
@@ -39,6 +45,9 @@ function Submesh.new(material, start, drawcount)
   return setmetatable(instance, Submesh)
 end
 
+---
+--- Mesh
+---
 ---@class lvrm.Mesh: lvrm.MeshInstance
 local Mesh = {}
 Mesh.__index = Mesh
@@ -50,7 +59,13 @@ Mesh.__index = Mesh
 ---@param morphtargets MorphTarget[]?
 ---@return lvrm.Mesh
 function Mesh.new(name, vertexbuffer, submeshes, indices, morphtargets)
-  local lg_mesh = vertexbuffer:to_lg_mesh()
+  ---@type integer
+  local size = ffi.sizeof(vertexbuffer.array)
+  local lg_data = love.data.newByteData(size)
+  ffi.copy(lg_data:getFFIPointer(), vertexbuffer.array, size)
+  local lg_mesh = love.graphics.newMesh(vertexbuffer.format, lg_data, "triangles", "stream")
+
+  -- e  local lg_mesh = vertexbuffer:to_lg_mesh(morphtargets and "stream" or "static")
   if indices then
     lg_mesh:setVertexMap(indices.data, indices.format)
   end
@@ -59,6 +74,8 @@ function Mesh.new(name, vertexbuffer, submeshes, indices, morphtargets)
   local instance = {
     id = ffi.new "int[1]",
     name = name and name or "",
+    vertexbuffer = vertexbuffer,
+    lg_data = lg_data,
     lg_mesh = lg_mesh,
     submeshes = submeshes,
     morphtargets = morphtargets,
@@ -187,7 +204,11 @@ function Mesh.load(r, gltf_mesh, materials)
       for j, t in ipairs(p.targets) do
         local morphtarget = morphtargets[j]
         if not morphtarget then
-          morphtarget = MorphTarget.new(morphtarget_names[j], total_vertex_count)
+          local name = string.format("%d", j)
+          if morphtarget_names then
+            name = morphtarget_names[j]
+          end
+          morphtarget = MorphTarget.new(name, total_vertex_count)
           morphtargets[j] = morphtarget
         end
 
@@ -206,6 +227,32 @@ end
 ---@param view falg.Mat4
 ---@param projection falg.Mat4
 function Mesh:draw(model, view, projection)
+  if self.morphtargets then
+    -- clear base mesh
+    local size = ffi.sizeof(self.vertexbuffer.array)
+    local ptr = ffi.cast("MorphVertex*", self.lg_data:getFFIPointer())
+    ffi.copy(ptr, self.vertexbuffer.array, size)
+
+    -- add morph target
+    local w = 0
+    for _, t in ipairs(self.morphtargets) do
+      if t.value[0] > 0 then
+        w = w + t.value[0]
+        for i = 0, t.vertexbuffer:count() do
+          ptr[i].Position.X = ptr[i].Position.X + t.vertexbuffer.array[i].Position.X -- * t.value
+          ptr[i].Position.Y = ptr[i].Position.Y + t.vertexbuffer.array[i].Position.Y -- * t.value
+          ptr[i].Position.Z = ptr[i].Position.Z + t.vertexbuffer.array[i].Position.Z -- * t.value
+        end
+      end
+    end
+
+    if w > 0 then
+      -- update mesh
+      self.lg_mesh:setVertices(self.lg_data)
+      -- self.lg_mesh:flush()
+    end
+  end
+
   for _, s in ipairs(self.submeshes) do
     s.material:use()
     if s.material.color_texture then

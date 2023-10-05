@@ -54,7 +54,7 @@ local function load_texture(bytes, sampler)
   local texture = love.graphics.newImage(image)
   image:release()
 
-  if sampler then
+  if sampler and sampler.wrapS and sampler.wrapT then
     texture:setWrap(WRAP_MAP[sampler.wrapS], WRAP_MAP[sampler.wrapT])
   end
 
