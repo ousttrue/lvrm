@@ -4,22 +4,21 @@ require "falg"
 
 local Material = require "lvrm.material"
 
----@class lvrm.SubMesh
----@field start integer
----@field drawcount integer
----@field material lvrm.Material
-
+---@class lvrm.Submesh: lvrm.SubmeshInsance
 local Submesh = {}
 
 ---@param material lvrm.Material
 ---@param start integer
 ---@param drawcount integer
 function Submesh.new(material, start, drawcount)
-  return {
+  ---@class lvrm.SubmeshInsance
+  local instance = {
     material = material,
     start = start,
     drawcount = drawcount,
   }
+  ---@type lvrm.Submesh
+  return setmetatable(instance, Submesh)
 end
 
 ffi.cdef [[
@@ -31,23 +30,57 @@ typedef struct {
 ]]
 
 local VERTEX_FORMAT = {
-  { "VertexPosition", "float", 3 },
-  { "VertexTexCoord", "float", 2 },
-  { "VertexNormal", "float", 3 },
+  Vertex = {
+    { "VertexPosition", "float", 3 },
+    { "VertexTexCoord", "float", 2 },
+    { "VertexNormal", "float", 3 },
+  },
 }
-local VERTEX_SIZE = ffi.sizeof "Vertex"
+
+---@class VertexBuffer: VertexBufferInstance
+local VertexBuffer = {}
+VertexBuffer.__index = VertexBuffer
+
+---@param array ffi.cdata* Vertex[N]
+---@param format table
+---@return VertexBuffer
+function VertexBuffer.new(array, format)
+  ---@class VertexBufferInstance
+  local instance = {
+    array = array,
+    format = format,
+  }
+  ---@type VertexBuffer
+  return setmetatable(instance, VertexBuffer)
+end
+
+---@return VertexBuffer
+function VertexBuffer.create(t, count)
+  ---@type ffi.cdecl*
+  local ct = string.format("Vertex[%d]", count)
+  local array = ffi.new(ct)
+  return VertexBuffer.new(array, VERTEX_FORMAT[t])
+end
+
+function VertexBuffer:to_lg_mesh()
+  ---@type integer
+  local size = ffi.sizeof(self.array)
+  local data = love.data.newByteData(size)
+  ffi.copy(data:getFFIPointer(), self.array, size)
+  return love.graphics.newMesh(self.format, data, "triangles", "static")
+end
 
 ---@class lvrm.Mesh: lvrm.MeshInstance
 local Mesh = {}
 Mesh.__index = Mesh
 
 ---@param name string?
----@param data love.ByteData
----@param submeshes lvrm.SubMesh[]
+---@param vertexbuffer VertexBuffer
+---@param submeshes lvrm.Submesh[]
 ---@param indices {data: love.ByteData, format: "uint16"|"uint32"}?
 ---@return lvrm.Mesh
-function Mesh.new(name, vertexformat, data, submeshes, indices)
-  local lg_mesh = love.graphics.newMesh(vertexformat, data, "triangles", "static")
+function Mesh.new(name, vertexbuffer, submeshes, indices)
+  local lg_mesh = vertexbuffer:to_lg_mesh()
   if indices then
     lg_mesh:setVertexMap(indices.data, indices.format)
   end
@@ -56,9 +89,7 @@ function Mesh.new(name, vertexformat, data, submeshes, indices)
   local instance = {
     id = ffi.new "int[1]",
     name = name and name or "",
-    ---@type love.Mesh
-    vertex_buffer = lg_mesh,
-    ---@type lvrm.SubMesh[]
+    lg_mesh = lg_mesh,
     submeshes = submeshes,
   }
 
@@ -68,18 +99,17 @@ end
 
 ---@return lvrm.Mesh
 function Mesh.new_triangle()
-  local data = love.data.newByteData(VERTEX_SIZE * 3)
-
   -- local buffer = ffi.new "Vertex[3]"
-  local buffer = ffi.cast("Vertex*", data:getPointer())
+  local buffer = ffi.new "Vertex[3]"
   buffer[0].Position.X = -1
   buffer[0].Position.Y = -1
   buffer[1].Position.X = 1
   buffer[1].Position.Y = -1
   buffer[2].Position.X = 0
   buffer[2].Position.Y = 1
+  local vertex_buffer = VertexBuffer.new(buffer, VERTEX_FORMAT.Vertex)
 
-  return Mesh.new("__triangle__", VERTEX_FORMAT, data, {
+  return Mesh.new("__triangle__", vertex_buffer, {
     Submesh.new(Material.new("default", "default"), 1, 3), -- 1origin
   })
 end
@@ -116,8 +146,7 @@ function Mesh.load(r, gltf_mesh, materials)
     total_index_count = total_index_count + index_count
   end
 
-  local data = love.data.newByteData(VERTEX_SIZE * total_vertex_count)
-  local p_vertices = ffi.cast("Vertex*", data:getFFIPointer())
+  -- make indices
   local indices
   local p_indices
   if total_index_count > 0 then
@@ -136,6 +165,9 @@ function Mesh.load(r, gltf_mesh, materials)
     end
   end
 
+  local vertex_buffer = VertexBuffer.create("Vertex", total_vertex_count)
+
+  -- fill data0
   local vertex_offset = 0
   local index_offset = 0
   for _, p in ipairs(gltf_mesh.primitives) do
@@ -150,20 +182,20 @@ function Mesh.load(r, gltf_mesh, materials)
     local attributes = p.attributes
     local positions_data = r:read_accessor_bytes(attributes.POSITION)
     for i = 0, positions_data.len - 1 do
-      p_vertices[vertex_offset + i].Position = positions_data.ptr[i]
+      vertex_buffer.array[vertex_offset + i].Position = positions_data.ptr[i]
     end
 
     if attributes.TEXCOORD_0 then
       local uv_data = r:read_accessor_bytes(attributes.TEXCOORD_0)
       for i = 0, uv_data.len - 1 do
-        p_vertices[vertex_offset + i].TexCoord = uv_data.ptr[i]
+        vertex_buffer.array[vertex_offset + i].TexCoord = uv_data.ptr[i]
       end
     end
 
     vertex_offset = vertex_offset + positions_data.len
   end
 
-  return Mesh.new(gltf_mesh.name, VERTEX_FORMAT, data, submeshes, indices)
+  return Mesh.new(gltf_mesh.name, vertex_buffer, submeshes, indices)
 end
 
 ---@param model falg.Mat4
@@ -173,17 +205,17 @@ function Mesh:draw(model, view, projection)
   for _, s in ipairs(self.submeshes) do
     s.material:use()
     if s.material.color_texture then
-      self.vertex_buffer:setTexture(s.material.color_texture)
+      self.lg_mesh:setTexture(s.material.color_texture)
     else
-      self.vertex_buffer:setTexture()
+      self.lg_mesh:setTexture()
     end
 
     s.material:send_mat4("m_model", model)
     s.material:send_mat4("m_view", view)
     s.material:send_mat4("m_projection", projection)
     assert(s.drawcount > 0, "empty submesh")
-    self.vertex_buffer:setDrawRange(s.start, s.drawcount)
-    love.graphics.draw(self.vertex_buffer)
+    self.lg_mesh:setDrawRange(s.start, s.drawcount)
+    love.graphics.draw(self.lg_mesh)
   end
 end
 

@@ -87,7 +87,7 @@ function MeshGui:show_mesh(root, m, mesh)
 
   -- vertices
   imgui.TableNextColumn()
-  imgui.TextUnformatted(string.format("%d", mesh.vertex_buffer:getVertexCount()))
+  imgui.TextUnformatted(string.format("%d", mesh.lg_mesh:getVertexCount()))
 
   -- indices
   imgui.TableNextColumn()
