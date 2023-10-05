@@ -171,30 +171,32 @@ function Mesh.load(r, gltf_mesh, materials)
 
     -- fill vertices
     local attributes = p.attributes
+
     local positions_data = r:read_accessor_bytes(attributes.POSITION)
-    for i = 0, positions_data.len - 1 do
-      vertexbuffer.array[vertex_offset + i].Position = positions_data.ptr[i]
-    end
+    vertexbuffer:assign(vertex_offset, positions_data, "Position")
 
     if attributes.TEXCOORD_0 then
       local uv_data = r:read_accessor_bytes(attributes.TEXCOORD_0)
-      for i = 0, uv_data.len - 1 do
-        vertexbuffer.array[vertex_offset + i].TexCoord = uv_data.ptr[i]
-      end
+      vertexbuffer:assign(vertex_offset, uv_data, "TexCoord")
     end
 
     -- TODO: skinning
 
-    vertex_offset = vertex_offset + positions_data.len
-
     -- morph target
     if p.targets then
       for j, t in ipairs(p.targets) do
-        if not morphtargets[j] then
-          morphtargets[j] = MorphTarget.new(morphtarget_names[j], total_vertex_count)
+        local morphtarget = morphtargets[j]
+        if not morphtarget then
+          morphtarget = MorphTarget.new(morphtarget_names[j], total_vertex_count)
+          morphtargets[j] = morphtarget
         end
+
+        local morph_positions_data = r:read_accessor_bytes(t.POSITION)
+        morphtarget.vertexbuffer:assign(vertex_offset, morph_positions_data, "Position")
       end
     end
+
+    vertex_offset = vertex_offset + positions_data.len
   end
 
   return Mesh.new(gltf_mesh.name, vertexbuffer, submeshes, indices, morphtargets)

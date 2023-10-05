@@ -57,4 +57,13 @@ function VertexBuffer:to_lg_mesh()
   return love.graphics.newMesh(self.format, data, "triangles", "static")
 end
 
+---@param offset integer
+---@param span Span
+---@param prop string
+function VertexBuffer:assign(offset, span, prop)
+  for i = 0, span.len - 1 do
+    self.array[offset + i][prop] = span.ptr[i]
+  end
+end
+
 return VertexBuffer
