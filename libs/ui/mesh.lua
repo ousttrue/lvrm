@@ -73,6 +73,7 @@ end
 ---@param mesh lvrm.Mesh
 function MeshGui:show_mesh(root, m, mesh)
   local gltf_mesh = root.meshes[m]
+  assert(gltf_mesh)
 
   imgui.TableNextRow()
   -- name

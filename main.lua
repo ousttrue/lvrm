@@ -44,6 +44,8 @@ function State:load(path)
   end
   local reader = lvrm_reader.read_from_path(path)
   if reader then
+    self.scene = nil
+    self.error = nil
     self.json_root = reader.root
     local ok, result = pcall(Scene.load, reader)
     if ok then

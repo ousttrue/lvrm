@@ -74,7 +74,7 @@ function GltfReader.new(json_chunk, bin_chunk, base_dir)
 
     base_dir = base_dir,
 
-    ---@type {uri:string, bytes:string}
+    ---@type {uri:string, bytes:ffi.cdata*}
     uri_cache = {},
   }
   ---@type GltfReader
@@ -160,7 +160,7 @@ local function get_item_size(accessor)
 end
 
 ---@param buffer_index integer 0 origin
----@return string | ffi.cdata*
+---@return ffi.cdata*
 function GltfReader:get_buffer(buffer_index)
   local buffer = self.root.buffers[buffer_index + 1]
   if buffer.uri then
@@ -172,8 +172,10 @@ function GltfReader:get_buffer(buffer_index)
     local path = self.base_dir .. "/" .. buffer.uri
     local data = util.readfile(path)
     assert(data, path)
-    self.uri_cache[buffer.uri] = data
-    return data
+    local array = ffi.new(string.format("uint8_t[%d]", #data))
+    ffi.copy(array, data)
+    self.uri_cache[buffer.uri] = array
+    return array
   else
     assert(self.bin)
     return self.bin
@@ -181,7 +183,7 @@ function GltfReader:get_buffer(buffer_index)
 end
 
 ---@param bufferview_index integer 0 origin
----@return string | Span
+---@return Span
 function GltfReader:read_bufferview_bytes(bufferview_index)
   assert(bufferview_index)
   local buffer_view = self.root.bufferViews[bufferview_index + 1] -- 1origin
@@ -193,16 +195,12 @@ function GltfReader:read_bufferview_bytes(bufferview_index)
 
   local bin = self:get_buffer(buffer_view.buffer)
 
-  if type(bin) == "string" then
-    return bin:sub(buffer_view_offset + 1, buffer_view_offset + buffer_view.byteLength)
-  else
-    local span = Span.new(ffi.cast("uint8_t*", bin), ffi.sizeof(bin))
-    return span:subspan(buffer_view_offset, buffer_view.byteLength)
-  end
+  local span = Span.new(ffi.cast("uint8_t*", bin), ffi.sizeof(bin))
+  return span:subspan(buffer_view_offset, buffer_view.byteLength)
 end
 
 ---@param image_index integer 0 origin
----@return string | Span
+---@return Span
 function GltfReader:read_image_bytes(image_index)
   local image = self.root.images[image_index + 1] -- 1origin
   return self:read_bufferview_bytes(image.bufferView)
@@ -218,6 +216,7 @@ function GltfReader:read_accessor_bytes(accessor_index)
   else
     ---@type Span
     local bufferview_bytes = self:read_bufferview_bytes(accessor.bufferView)
+    assert(bufferview_bytes)
 
     local accessor_offset = 0
     if accessor.byteOffset then
@@ -226,6 +225,7 @@ function GltfReader:read_accessor_bytes(accessor_index)
     assert(accessor_offset)
     local accessor_item_size = get_item_size(accessor)
     local accessor_length = accessor.count * accessor_item_size
+    assert(accessor_length)
     local accessor_bytes = bufferview_bytes:subspan(accessor_offset, accessor_length)
 
     -- return accessor_bytes
