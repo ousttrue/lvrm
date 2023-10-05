@@ -45,7 +45,12 @@ function State:load(path)
   local reader = lvrm_reader.read_from_path(path)
   if reader then
     self.json_root = reader.root
-    self.scene = Scene.load(reader)
+    local ok, result = pcall(Scene.load, reader)
+    if ok then
+      self.scene = result
+    else
+      self.error = result
+    end
   end
 end
 
@@ -86,6 +91,14 @@ love.load = function(args)
   STATE.docking_space
     :add("scene", function()
       UI.ShowScene(STATE.scene)
+    end)
+    :no_padding()
+
+  STATE.docking_space
+    :add("error", function()
+      if STATE.error then
+        imgui.TextUnformatted(STATE.error)
+      end
     end)
     :no_padding()
 

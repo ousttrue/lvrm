@@ -183,6 +183,7 @@ end
 ---@param bufferview_index integer 0 origin
 ---@return string | Span
 function GltfReader:read_bufferview_bytes(bufferview_index)
+  assert(bufferview_index)
   local buffer_view = self.root.bufferViews[bufferview_index + 1] -- 1origin
   local buffer_view_offset = 0
   if buffer_view.byteOffset then

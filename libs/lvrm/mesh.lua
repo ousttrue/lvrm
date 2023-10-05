@@ -234,23 +234,19 @@ function Mesh:draw(model, view, projection)
     ffi.copy(ptr, self.vertexbuffer.array, size)
 
     -- add morph target
-    local w = 0
+    local total_w = 0
     for _, t in ipairs(self.morphtargets) do
-      if t.value[0] > 0 then
-        w = w + t.value[0]
+      local w = t.value[0]
+      if w > 0 then
+        total_w = total_w + w
         for i = 0, t.vertexbuffer:count() do
-          ptr[i].Position.X = ptr[i].Position.X + t.vertexbuffer.array[i].Position.X -- * t.value
-          ptr[i].Position.Y = ptr[i].Position.Y + t.vertexbuffer.array[i].Position.Y -- * t.value
-          ptr[i].Position.Z = ptr[i].Position.Z + t.vertexbuffer.array[i].Position.Z -- * t.value
+          ptr[i].Position = ptr[i].Position + t.vertexbuffer.array[i].Position:scale(w)
         end
       end
     end
 
-    if w > 0 then
-      -- update mesh
-      self.lg_mesh:setVertices(self.lg_data)
-      -- self.lg_mesh:flush()
-    end
+    -- update mesh
+    self.lg_mesh:setVertices(self.lg_data)
   end
 
   for _, s in ipairs(self.submeshes) do

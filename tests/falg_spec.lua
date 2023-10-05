@@ -5,6 +5,16 @@ package.path = string.format("%s;./libs/?.lua;./libs/?/init.lua", package.path)
 local falg = require "falg"
 
 describe("falg", function()
+  it("float3", function()
+    local l = falg.Float3(1, 2, 3)
+    local r = falg.Float3(1, 2, 3)
+    assert.same(l, r)
+    assert.same(2, l.Y)
+    assert.same(l.Z, r.Z)
+    assert.same(falg.Float3(2, 4, 6), l + r)
+    assert.same(falg.Float3(2, 4, 6), l:scale(2))
+  end)
+
   describe("mat4", function()
     it("mat4", function()
       local l = falg.Mat4(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16)
