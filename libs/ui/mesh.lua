@@ -141,8 +141,10 @@ function MeshGui:show_morph_targets(scene)
     return
   end
 
-  -- for i, m in ipairs(submesh.morph) do
-  -- end
+  for i, t in ipairs(mesh.morphtargets) do
+    -- imgui.TextUnformatted(string.format("%s", m.name))
+    imgui.SliderFloat(t.name, t.value, 0, 1)
+  end
 end
 
 ---@param scene lvrm.Scene

@@ -11,7 +11,13 @@
 ---@field version string
 ---@field minVersion string
 
----@class gltf.ChildOfRootProperty
+--- https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/schema/glTFProperty.schema.json
+---@class gltf.Property
+---@field extras table?
+---@field extensions table?
+
+--- https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/schema/glTFChildOfRootProperty.schema.json
+---@class gltf.ChildOfRootProperty: gltf.Property
 ---@field name string?
 
 --- https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/schema/buffer.schema.json
@@ -116,7 +122,7 @@ local Sampler_Wrap = {
 ---@field POSITION integer
 ---@field NORMAL integer?
 
----@class gltf.Primitive
+---@class gltf.Primitive : gltf.Property
 ---@field attributes gltf.Attributes
 ---@field indices integer?
 ---@field material integer?

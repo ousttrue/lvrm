@@ -1,8 +1,26 @@
 require "lvrm.gltf_reader"
 local ffi = require "ffi"
 require "falg"
-
+local VertexBuffer = require "lvrm.vertexbuffer"
 local Material = require "lvrm.material"
+
+---@class MorphTarget: MorphTargetInstance
+local MorphTarget = {}
+MorphTarget.__index = MorphTarget
+
+---@param name string
+---@param vertex_count integer
+---@return MorphTarget
+function MorphTarget.new(name, vertex_count)
+  ---@class MorphTargetInstance
+  local instance = {
+    name = name,
+    value = ffi.new "float[1]",
+    vertexbuffer = VertexBuffer.create("MorphVertex", vertex_count),
+  }
+  ---@type MorphTarget
+  return setmetatable(instance, MorphTarget)
+end
 
 ---@class lvrm.Submesh: lvrm.SubmeshInsance
 local Submesh = {}
@@ -21,55 +39,6 @@ function Submesh.new(material, start, drawcount)
   return setmetatable(instance, Submesh)
 end
 
-ffi.cdef [[
-typedef struct {
-  Float3 Position;
-  Float2 TexCoord;
-  Float3 Normal;
-} Vertex;
-]]
-
-local VERTEX_FORMAT = {
-  Vertex = {
-    { "VertexPosition", "float", 3 },
-    { "VertexTexCoord", "float", 2 },
-    { "VertexNormal", "float", 3 },
-  },
-}
-
----@class VertexBuffer: VertexBufferInstance
-local VertexBuffer = {}
-VertexBuffer.__index = VertexBuffer
-
----@param array ffi.cdata* Vertex[N]
----@param format table
----@return VertexBuffer
-function VertexBuffer.new(array, format)
-  ---@class VertexBufferInstance
-  local instance = {
-    array = array,
-    format = format,
-  }
-  ---@type VertexBuffer
-  return setmetatable(instance, VertexBuffer)
-end
-
----@return VertexBuffer
-function VertexBuffer.create(t, count)
-  ---@type ffi.cdecl*
-  local ct = string.format("Vertex[%d]", count)
-  local array = ffi.new(ct)
-  return VertexBuffer.new(array, VERTEX_FORMAT[t])
-end
-
-function VertexBuffer:to_lg_mesh()
-  ---@type integer
-  local size = ffi.sizeof(self.array)
-  local data = love.data.newByteData(size)
-  ffi.copy(data:getFFIPointer(), self.array, size)
-  return love.graphics.newMesh(self.format, data, "triangles", "static")
-end
-
 ---@class lvrm.Mesh: lvrm.MeshInstance
 local Mesh = {}
 Mesh.__index = Mesh
@@ -78,8 +47,9 @@ Mesh.__index = Mesh
 ---@param vertexbuffer VertexBuffer
 ---@param submeshes lvrm.Submesh[]
 ---@param indices {data: love.ByteData, format: "uint16"|"uint32"}?
+---@param morphtargets MorphTarget[]?
 ---@return lvrm.Mesh
-function Mesh.new(name, vertexbuffer, submeshes, indices)
+function Mesh.new(name, vertexbuffer, submeshes, indices, morphtargets)
   local lg_mesh = vertexbuffer:to_lg_mesh()
   if indices then
     lg_mesh:setVertexMap(indices.data, indices.format)
@@ -91,6 +61,7 @@ function Mesh.new(name, vertexbuffer, submeshes, indices)
     name = name and name or "",
     lg_mesh = lg_mesh,
     submeshes = submeshes,
+    morphtargets = morphtargets,
   }
 
   ---@type lvrm.Mesh
@@ -107,9 +78,9 @@ function Mesh.new_triangle()
   buffer[1].Position.Y = -1
   buffer[2].Position.X = 0
   buffer[2].Position.Y = 1
-  local vertex_buffer = VertexBuffer.new(buffer, VERTEX_FORMAT.Vertex)
+  local vertexbuffer = VertexBuffer.new(buffer, VertexBuffer.VERTEX_FORMAT.Vertex)
 
-  return Mesh.new("__triangle__", vertex_buffer, {
+  return Mesh.new("__triangle__", vertexbuffer, {
     Submesh.new(Material.new("default", "default"), 1, 3), -- 1origin
   })
 end
@@ -165,12 +136,31 @@ function Mesh.load(r, gltf_mesh, materials)
     end
   end
 
-  local vertex_buffer = VertexBuffer.create("Vertex", total_vertex_count)
+  local morphtarget_names
+  if gltf_mesh.extras then
+    morphtarget_names = gltf_mesh.extras.targetNames
+  end
+  if not morphtarget_names then
+    for _, p in ipairs(gltf_mesh.primitives) do
+      if p.extras and p.extras.targetNames then
+        morphtarget_names = p.extras.targetNames
+        break
+      end
+    end
+  end
 
-  -- fill data0
+  --
+  -- create VertexBuffer
+  --
+  local vertexbuffer = VertexBuffer.create("Vertex", total_vertex_count)
   local vertex_offset = 0
   local index_offset = 0
+
+  ---@type MorphTarget[]
+  local morphtargets = {}
+
   for _, p in ipairs(gltf_mesh.primitives) do
+    -- fill indices
     if p.indices then
       local indices_data = r:read_accessor_bytes(p.indices)
       for i = 0, indices_data.len - 1 do
@@ -179,23 +169,35 @@ function Mesh.load(r, gltf_mesh, materials)
       end
     end
 
+    -- fill vertices
     local attributes = p.attributes
     local positions_data = r:read_accessor_bytes(attributes.POSITION)
     for i = 0, positions_data.len - 1 do
-      vertex_buffer.array[vertex_offset + i].Position = positions_data.ptr[i]
+      vertexbuffer.array[vertex_offset + i].Position = positions_data.ptr[i]
     end
 
     if attributes.TEXCOORD_0 then
       local uv_data = r:read_accessor_bytes(attributes.TEXCOORD_0)
       for i = 0, uv_data.len - 1 do
-        vertex_buffer.array[vertex_offset + i].TexCoord = uv_data.ptr[i]
+        vertexbuffer.array[vertex_offset + i].TexCoord = uv_data.ptr[i]
       end
     end
 
+    -- TODO: skinning
+
     vertex_offset = vertex_offset + positions_data.len
+
+    -- morph target
+    if p.targets then
+      for j, t in ipairs(p.targets) do
+        if not morphtargets[j] then
+          morphtargets[j] = MorphTarget.new(morphtarget_names[j], total_vertex_count)
+        end
+      end
+    end
   end
 
-  return Mesh.new(gltf_mesh.name, vertex_buffer, submeshes, indices)
+  return Mesh.new(gltf_mesh.name, vertexbuffer, submeshes, indices, morphtargets)
 end
 
 ---@param model falg.Mat4
