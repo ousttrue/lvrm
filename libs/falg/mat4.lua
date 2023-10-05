@@ -1,13 +1,10 @@
 local ffi = require "ffi"
 ffi.cdef [[
-typedef union {
-    struct {
-        float _11, _12, _13, _14;
-        float _21, _22, _23, _24;
-        float _31, _32, _33, _34;
-        float _41, _42, _43, _44;
-    };
-    float array[16];
+typedef struct {
+  float _11, _12, _13, _14;
+  float _21, _22, _23, _24;
+  float _31, _32, _33, _34;
+  float _41, _42, _43, _44;
 } Mat4;
 ]]
 local MAT4_SIZE = ffi.sizeof "Mat4"
@@ -34,6 +31,50 @@ assert(MAT4_SIZE == 4 * 16, "no size for cdef Mat4")
 local Mat4 = {}
 Mat4.__index = Mat4
 
+function Mat4:__tostring()
+  return string.format(
+    "[%0.2f, %0.2f, %0.2f, %0.2f]\n[%0.2f, %0.2f, %0.2f, %0.2f]\n[%0.2f, %0.2f, %0.2f, %0.2f]\n[%0.2f, %0.2f, %0.2f, %0.2f]\n",
+    self._11,
+    self._12,
+    self._13,
+    self._14,
+    self._21,
+    self._22,
+    self._23,
+    self._24,
+    self._31,
+    self._32,
+    self._33,
+    self._34,
+    self._41,
+    self._42,
+    self._43,
+    self._44
+  )
+end
+
+function Mat4.__eq(lhs, rhs)
+  local l = lhs._11
+  local r = lhs._11
+  return l == r
+  --   and self._12 == rhs._12
+  --   and self._13 == rhs._13
+  --   and self._14 == rhs._14
+  --   and self._21 == rhs._21
+  --   and self._22 == rhs._22
+  --   and self._23 == rhs._23
+  --   and self._24 == rhs._24
+  --   and self._31 == rhs._31
+  --   and self._32 == rhs._32
+  --   and self._33 == rhs._33
+  --   and self._34 == rhs._34
+  --   and self._41 == rhs._41
+  --   and self._42 == rhs._42
+  --   and self._43 == rhs._43
+  --   and self._44 == rhs._44
+  -- )
+end
+
 -- ---Allocate a love.ByteData for Mat4(float16)
 -- ---@return falg.Mat4
 -- function Mat4.new()
@@ -52,9 +93,22 @@ Mat4.__index = Mat4
 function Mat4:set_array(array)
   assert(#array == 16)
   -- local p = self:get_cdata()
-  for i, v in ipairs(array) do
-    self.array[i - 1] = v -- ffi is 0 origin
-  end
+  self._11 = array[1]
+  self._12 = array[2]
+  self._13 = array[3]
+  self._14 = array[4]
+  self._21 = array[5]
+  self._22 = array[6]
+  self._23 = array[7]
+  self._24 = array[8]
+  self._31 = array[9]
+  self._32 = array[10]
+  self._33 = array[11]
+  self._34 = array[12]
+  self._41 = array[13]
+  self._42 = array[14]
+  self._43 = array[15]
+  self._44 = array[16]
   ---@type falg.Mat4
   return self
 end
@@ -240,7 +294,10 @@ function Mat4:rotation_z(rad)
   return self
 end
 
+function Mat4.new_scale(x, y, z)
+  return ffi.new("Mat4", x, 0, 0, 0, 0, y, 0, 0, 0, 0, z, 0, 0, 0, 0, 1)
+end
+
 Mat4 = ffi.metatype("Mat4", Mat4)
 ---@type falg.Mat4
 return Mat4
-

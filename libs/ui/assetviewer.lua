@@ -23,6 +23,7 @@ Path.__index = Path
 function Path.new(path)
   ---@class PathInstance
   ---@field children Path[]?
+  ---@field clicked Path?
   local instance = {
     path = path,
     name = basename(path),
@@ -66,7 +67,7 @@ AssetViewer.__index = AssetViewer
 function AssetViewer.new(path)
   ---@class AssetViewerInstance
   local instance = {
-    root = traverse(path:gsub("\\", '/')),
+    root = traverse(path:gsub("\\", "/")),
   }
   ---@type AssetViewer
   return setmetatable(instance, AssetViewer)
@@ -80,6 +81,9 @@ function AssetViewer:show_path(path)
   imgui.TableNextColumn()
   local flags = util.make_node_flags { is_leaf = path.mode ~= "directory" }
   local node_open = imgui.TreeNodeEx_StrStr(path.path, flags, "%s", path.name)
+  if imgui.IsItemClicked() and not imgui.IsItemToggledOpen() then
+    self.clicked = path
+  end
 
   -- mode
   imgui.TableNextColumn()
@@ -95,14 +99,19 @@ function AssetViewer:show_path(path)
   end
 end
 
+---@return Path?
 function AssetViewer:Show()
   imgui.TextUnformatted(self.root.path)
+
+  self.clicked = nil
 
   util.show_table("assetTable", { "name", "mode" }, function()
     for i, child in ipairs(self.root.children) do
       self:show_path(child)
     end
   end)
+
+  return self.clicked
 end
 
 return AssetViewer

@@ -111,10 +111,13 @@ love.load = function(args)
 
   local gltf_sample_models = os.getenv "GLTF_SAMPLE_MODELS"
   if gltf_sample_models then
-    local asset = AssetViewer.new(gltf_sample_models .. '/2.0')
+    local asset = AssetViewer.new(gltf_sample_models .. "/2.0")
 
     STATE.docking_space:add("gltf_sample_models", function()
-      asset:Show()
+      local new_path = asset:Show()
+      if new_path then
+        STATE:load(new_path.path)
+      end
     end)
   end
 

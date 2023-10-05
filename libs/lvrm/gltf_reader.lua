@@ -211,42 +211,47 @@ end
 ---@return Span
 function GltfReader:read_accessor_bytes(accessor_index)
   local accessor = self.root.accessors[accessor_index + 1] -- 1origin
-  ---@type Span
-  local bufferview_bytes = self:read_bufferview_bytes(accessor.bufferView)
 
-  local accessor_offset = 0
-  if accessor.byteOffset then
-    accessor_offset = accessor.byteOffset
-  end
-  assert(accessor_offset)
-  local accessor_item_size = get_item_size(accessor)
-  local accessor_length = accessor.count * accessor_item_size
-  local accessor_bytes = bufferview_bytes:subspan(accessor_offset, accessor_length)
-
-  -- return accessor_bytes
-  if accessor.componentType == 5123 then
-    -- short
-    assert(accessor.type == "SCALAR")
-    return accessor_bytes:cast("unsigned short", accessor.count)
-  elseif accessor.componentType == 5125 then
-    -- int
-    assert(accessor.type == "SCALAR")
-    return accessor_bytes:cast("unsigned int", accessor.count)
-  elseif accessor.componentType == 5126 then
-    -- float
-    if accessor.type == "SCALAR" then
-      return accessor_bytes:cast("float", accessor.count)
-    elseif accessor.type == "VEC2" then
-      return accessor_bytes:cast("Float2", accessor.count)
-    elseif accessor.type == "VEC3" then
-      return accessor_bytes:cast("Float3", accessor.count)
-    elseif accessor.type == "VEC4" then
-      return accessor_bytes:cast("Float4", accessor.count)
-    else
-      assert(false, "unknown type", accessor.componentType, accessor.type)
-    end
+  if accessor.sparse then
+    assert(false, "sparse not impl")
   else
-    assert(false, "unknown type", accessor.componentType)
+    ---@type Span
+    local bufferview_bytes = self:read_bufferview_bytes(accessor.bufferView)
+
+    local accessor_offset = 0
+    if accessor.byteOffset then
+      accessor_offset = accessor.byteOffset
+    end
+    assert(accessor_offset)
+    local accessor_item_size = get_item_size(accessor)
+    local accessor_length = accessor.count * accessor_item_size
+    local accessor_bytes = bufferview_bytes:subspan(accessor_offset, accessor_length)
+
+    -- return accessor_bytes
+    if accessor.componentType == 5123 then
+      -- short
+      assert(accessor.type == "SCALAR")
+      return accessor_bytes:cast("unsigned short", accessor.count)
+    elseif accessor.componentType == 5125 then
+      -- int
+      assert(accessor.type == "SCALAR")
+      return accessor_bytes:cast("unsigned int", accessor.count)
+    elseif accessor.componentType == 5126 then
+      -- float
+      if accessor.type == "SCALAR" then
+        return accessor_bytes:cast("float", accessor.count)
+      elseif accessor.type == "VEC2" then
+        return accessor_bytes:cast("Float2", accessor.count)
+      elseif accessor.type == "VEC3" then
+        return accessor_bytes:cast("Float3", accessor.count)
+      elseif accessor.type == "VEC4" then
+        return accessor_bytes:cast("Float4", accessor.count)
+      else
+        assert(false, "unknown type", accessor.componentType, accessor.type)
+      end
+    else
+      assert(false, "unknown type", accessor.componentType)
+    end
   end
 end
 

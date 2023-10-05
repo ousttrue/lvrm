@@ -59,7 +59,7 @@ local function traverse_json(jsonpath, prop, node)
       if node[1] then
         -- array
         for i, v in ipairs(node) do
-          local child_prop = string.format("%d", i)
+          local child_prop = string.format("%d", i-1)
           local child_jsonpath = jsonpath .. "." .. child_prop
           traverse_json(child_jsonpath, child_prop, v)
         end

@@ -28,10 +28,12 @@ end
 
 ---@retun falg.Mat4
 function Node:local_matrix()
+  local m = self.local_transform:matrix()
   if self.local_scale then
-    assert(false, "local_scale not impl")
+    return falg.Mat4.new_scale(self.local_scale.X, self.local_scale.Y, self.local_scale.Z)
+  else
+    return m
   end
-  return self.local_transform:matrix()
 end
 
 ---@param gltf_node gltf.Node
