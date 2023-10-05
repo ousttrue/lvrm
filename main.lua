@@ -118,9 +118,11 @@ love.load = function(args)
     STATE.time:show()
   end)
 
-  STATE.docking_space:add("selected_mesh", function()
-    STATE.mesh:ShowSelected(STATE.scene)
-  end)
+  STATE.docking_space
+    :add("selected_mesh", function()
+      STATE.mesh:ShowSelected(STATE.scene)
+    end)
+    :no_padding()
 
   local gltf_sample_models = os.getenv "GLTF_SAMPLE_MODELS"
   if gltf_sample_models then

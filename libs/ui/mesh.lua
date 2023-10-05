@@ -14,6 +14,7 @@ function MeshGui.new()
   ---@class MeshGuiInstance
   ---@field mesh integer? selected
   ---@field prim integer? selected
+  ---@field vertexbuffer_selected integer?
   local instance = {
     splitter = util.Splitter.new(),
   }
@@ -124,27 +125,39 @@ function MeshGui:show_morph_targets(scene)
   if not self.mesh then
     return
   end
-
   local mesh = scene.meshes[self.mesh]
   if not mesh then
     return
   end
 
-  if self.prim then
-    imgui.TextUnformatted(string.format("%s:%d", mesh.name, self.prim))
-  else
-    imgui.TextUnformatted(string.format("%s", mesh.name))
-  end
+  util.show_table("vertexbufferTable", { "name", "morph weight" }, function()
+    do
+      imgui.TableNextRow()
+      imgui.TableNextColumn()
+      local is_selected = self.vertexbuffer_selected == 0
+      if self.prim then
+        if imgui.Selectable_Bool(string.format("%s:%d", mesh.name, self.prim), is_selected) then
+          self.vertexbuffer_selected = 0
+        end
+      else
+        if imgui.Selectable_Bool(string.format("%s", mesh.name), is_selected) then
+          self.vertexbuffer_selected = 0
+        end
+      end
+    end
 
-  local submesh = mesh.submeshes[1]
-  if not submesh then
-    return
-  end
+    for i, t in ipairs(mesh.morphtargets) do
+      imgui.TableNextRow()
+      imgui.TableNextColumn()
+      local is_selected = self.vertexbuffer_selected == i
+      if imgui.Selectable_Bool(t.name, is_selected) then
+        self.vertexbuffer_selected = i
+      end
 
-  for i, t in ipairs(mesh.morphtargets) do
-    -- imgui.TextUnformatted(string.format("%s", m.name))
-    imgui.SliderFloat(t.name, t.value, 0, 1)
-  end
+      imgui.TableNextColumn()
+      imgui.SliderFloat(string.format("##%s", t.name), t.value, 0, 1)
+    end
+  end)
 end
 
 ---@param scene lvrm.Scene
@@ -160,7 +173,9 @@ function MeshGui:ShowSelected(scene)
   local size = imgui.GetContentRegionAvail()
   local sz1, sz2 = self.splitter:SplitHorizontal { size.x, size.y }
 
+  imgui.PushStyleVar_Vec2(imgui.ImGuiStyleVar_WindowPadding, { 0.0, 0.0 })
   imgui.BeginChild_Str("1", ffi.new("ImVec2", -1, sz1), true)
+  imgui.PopStyleVar()
   self:show_morph_targets(scene)
   imgui.EndChild()
   -- imgui.SameLine()
