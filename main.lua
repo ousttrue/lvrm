@@ -5,6 +5,7 @@ end
 package.path = package.cpath
   .. string.format(";%s\\libs\\?.lua;%s\\libs\\?\\init.lua", love.filesystem.getSource(), love.filesystem.getSource())
 
+local ffi = require "ffi"
 local falg = require "falg"
 local lvrm_reader = require "lvrm.gltf_reader"
 local RenderTarget = require "lvrm.rendertarget"
@@ -64,9 +65,22 @@ end
 
 local STATE = State.new()
 
+local function setup_font(path)
+  local data = util.readfile(path)
+  if not data then
+    return
+  end
+
+  -- for love
+  local font = love.graphics.newFont(love.data.newByteData(data), 32)
+  if font then
+    love.graphics.setFont(font)
+  end
+end
+
 -- love.data.newByteData()
 love.load = function(args)
-  imgui.love.Init() -- or imgui.love.Init("RGBA32") or imgui.love.Init("Alpha8")
+  imgui.love.Init "RGBA32" -- or imgui.love.Init("RGBA32") or imgui.love.Init("Alpha8")
 
   do
     local io = imgui.GetIO()
@@ -74,13 +88,14 @@ love.load = function(args)
     io.ConfigFlags = bit.bor(io.ConfigFlags, imgui.ImGuiConfigFlags_DockingEnable)
   end
 
-  local data = util.readfile "C:/Windows/Fonts/meiryo.ttc"
-  if data then
-    local font = love.graphics.newFont(love.data.newByteData(data), 32)
-    if font then
-      love.graphics.setFont(font)
-    end
-  end
+  setup_font "C:/Windows/Fonts/meiryo.ttc"
+
+  local io = imgui.GetIO()
+  local font = UI.AddFont(0, "C:/Windows/Fonts/meiryo.ttc", 20, false, io.Fonts:GetGlyphRangesJapanese())
+  UI.AddFont(1, "C:/Windows/Fonts/Seguiemj.ttf", 15, true, ffi.new("uint32_t[3]", 0x1, 0x1FFFF, 0))
+  -- io.Fonts:Build()
+  io.FontDefault = font
+  imgui.love.BuildFontAtlas "RGBA32"
 
   STATE:load(args[1])
 
@@ -98,6 +113,7 @@ love.load = function(args)
 
   STATE.docking_space
     :add("error", function()
+      imgui.TextUnformatted "🌻"
       if STATE.error then
         imgui.TextWrapped(STATE.error)
       end
@@ -166,9 +182,9 @@ love.load = function(args)
     :no_padding()
     :no_scrollbar()
 
-  if os.getenv "LOCAL_LUA_DEBUGGER_VSCODE" == "1" then
-    STATE.docking_space:add("imgui demo", imgui.ShowDemoWindow, true)
-  end
+  -- if os.getenv "LOCAL_LUA_DEBUGGER_VSCODE" == "1" then
+  STATE.docking_space:add("imgui demo", imgui.ShowDemoWindow, true)
+  -- end
 end
 
 love.draw = function()
