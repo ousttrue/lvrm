@@ -14,7 +14,7 @@ function MeshGui.new()
   ---@class MeshGuiInstance
   ---@field mesh integer? selected
   ---@field prim integer? selected
-  ---@field vertexbuffer_selected integer?
+  ---@field morph integer? selected
   local instance = {
     splitter = util.Splitter.new(),
   }
@@ -134,14 +134,14 @@ function MeshGui:show_morph_targets(scene)
     do
       imgui.TableNextRow()
       imgui.TableNextColumn()
-      local is_selected = self.vertexbuffer_selected == 0
+      local is_selected = self.morph == 0
       if self.prim then
         if imgui.Selectable_Bool(string.format("%s:%d", mesh.name, self.prim), is_selected) then
-          self.vertexbuffer_selected = 0
+          self.morph = 0
         end
       else
         if imgui.Selectable_Bool(string.format("%s", mesh.name), is_selected) then
-          self.vertexbuffer_selected = 0
+          self.morph = 0
         end
       end
     end
@@ -149,9 +149,9 @@ function MeshGui:show_morph_targets(scene)
     for i, t in ipairs(mesh.morphtargets) do
       imgui.TableNextRow()
       imgui.TableNextColumn()
-      local is_selected = self.vertexbuffer_selected == i
+      local is_selected = self.morph == i
       if imgui.Selectable_Bool(t.name, is_selected) then
-        self.vertexbuffer_selected = i
+        self.morph = i
       end
 
       imgui.TableNextColumn()
@@ -160,9 +160,51 @@ function MeshGui:show_morph_targets(scene)
   end)
 end
 
+---@param vertexbuffer VertexBuffer
+function MeshGui:show_vertexbuffer(vertexbuffer)
+  local cols = { "i" }
+  local props = {}
+  for i, f in ipairs(vertexbuffer.format) do
+    table.insert(cols, f[1])
+    table.insert(props, f[1]:sub(7)) -- remove prefix Vertex
+  end
+
+  util.show_table("vertexBufferTable", cols, function()
+    local count = vertexbuffer:count()
+    for i = 0, count - 1 do
+      imgui.TableNextRow()
+      imgui.TableNextColumn()
+      imgui.TextUnformatted(string.format("%d", i))
+
+      for j, prop in ipairs(props) do
+        imgui.TableNextColumn()
+        local vertex = vertexbuffer.array[i]
+        assert(vertex)
+        local str = tostring(vertex[prop])
+        imgui.TextUnformatted(str)
+      end
+    end
+  end)
+end
+
 ---@param scene lvrm.Scene
 function MeshGui:render_selected(scene)
-  --
+  if not self.mesh then
+    return
+  end
+  local mesh = scene.meshes[self.mesh]
+  if not mesh then
+    return
+  end
+
+  if self.morph == 0 then
+    -- TODO: show mesh vertexbuffer
+  else
+    local t = mesh.morphtargets[self.morph]
+    if t then
+      self:show_vertexbuffer(t.vertexbuffer)
+    end
+  end
 end
 
 ---@param scene lvrm.Scene
@@ -178,8 +220,11 @@ function MeshGui:ShowSelected(scene)
   imgui.PopStyleVar()
   self:show_morph_targets(scene)
   imgui.EndChild()
+
   -- imgui.SameLine()
+  imgui.PushStyleVar_Vec2(imgui.ImGuiStyleVar_WindowPadding, { 0.0, 0.0 })
   imgui.BeginChild_Str("2", ffi.new("ImVec2", -1, sz2), true)
+  imgui.PopStyleVar()
   self:render_selected(scene)
   imgui.EndChild()
 end

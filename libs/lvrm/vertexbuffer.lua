@@ -22,7 +22,7 @@ VertexBuffer.VERTEX_FORMAT = {
     { "VertexTexCoord", "float", 2 },
     { "VertexNormal", "float", 3 },
   },
-  MorphVertexn = {
+  MorphVertex = {
     { "VertexPosition", "float", 3 },
     { "VertexNormal", "float", 3 },
   },
@@ -32,6 +32,7 @@ VertexBuffer.VERTEX_FORMAT = {
 ---@param format table
 ---@return VertexBuffer
 function VertexBuffer.new(array, format)
+  assert(format)
   ---@class VertexBufferInstance
   local instance = {
     array = array,
@@ -46,7 +47,9 @@ function VertexBuffer.create(t, count)
   ---@type ffi.cdecl*
   local ct = string.format("Vertex[%d]", count)
   local array = ffi.new(ct)
-  return VertexBuffer.new(array, VertexBuffer.VERTEX_FORMAT[t])
+  local f = VertexBuffer.VERTEX_FORMAT[t]
+  assert(f)
+  return VertexBuffer.new(array, f)
 end
 
 ---@return integer

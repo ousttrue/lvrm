@@ -97,7 +97,7 @@ love.load = function(args)
   STATE.docking_space
     :add("error", function()
       if STATE.error then
-        imgui.TextUnformatted(STATE.error)
+        imgui.TextWrapped(STATE.error)
       end
     end)
     :no_padding()
