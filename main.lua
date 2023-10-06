@@ -9,7 +9,7 @@ local ffi = require "ffi"
 local falg = require "falg"
 local lvrm_reader = require "lvrm.gltf_reader"
 local RenderTarget = require "lvrm.rendertarget"
-local Time = require "ui.time"
+local Time = require "lvrm.time"
 
 local UI = require "ui"
 local DockingSpace = require "ui.docking_space"
@@ -18,10 +18,10 @@ local MeshGui = require "ui.mesh"
 local AnimationGui = require "ui.animation"
 local ShowJson = require "ui.gltf_json"
 local ShowScene = require "ui.scene"
+local ShowTime = require "ui.time"
 
 local util = require "lvrm.util"
 local Scene = require "lvrm.scene"
-local Camera = require "lvrm.camera"
 ---@class cimgui
 local imgui = require "cimgui"
 
@@ -62,7 +62,6 @@ function State:load(path)
 end
 
 function State:draw()
-  self.time:update()
   self.docking_space:begin()
   self.docking_space:draw()
 end
@@ -137,7 +136,7 @@ love.load = function(args)
     :no_padding()
 
   STATE.docking_space:add("time", function()
-    STATE.time:show()
+    ShowTime(STATE.time)
   end)
 
   STATE.docking_space
@@ -161,7 +160,6 @@ love.load = function(args)
   end
 
   local r = RenderTarget.new()
-  local camera = Camera.new()
   STATE.docking_space
     :add("3d view", function()
       -- update canvas size
@@ -169,29 +167,30 @@ love.load = function(args)
       r:update_size(size.x, size.y)
       local isActive, isHovered = UI.DraggableImage("image_button", r.colorcanvas, size)
 
-      -- update camera
-      camera:update(size.x, size.y, isActive, isHovered)
-
       -- render scene to rendertarget
-      if STATE.scene then
-        if STATE.animation.selected then
-          STATE.scene:set_time(STATE.time.seconds, STATE.time.loop[0], STATE.animation.selected)
-        end
-
-        r:render(function()
-          STATE.scene:draw(camera.view, camera.projection)
-        end)
+      if STATE.scene and STATE.animation.selected then
+        STATE.scene:set_time(STATE.time.seconds, STATE.time.loop[0], STATE.animation.selected)
       end
+
+      r:render(function(view, projection)
+        STATE.scene:draw(view, projection)
+      end, {
+        isActive = isActive,
+        isHovered = isHovered,
+        target = STATE.scene,
+      })
     end)
     :no_padding()
     :no_scrollbar()
 
-  -- if os.getenv "LOCAL_LUA_DEBUGGER_VSCODE" == "1" then
-  STATE.docking_space:add("imgui demo", imgui.ShowDemoWindow, true)
-  -- end
+  if os.getenv "LOCAL_LUA_DEBUGGER_VSCODE" == "1" then
+    STATE.docking_space:add("imgui demo", imgui.ShowDemoWindow, true)
+  end
 end
 
 love.draw = function()
+  local io = imgui.GetIO()
+  STATE.time:update(io.DeltaTime)
   STATE:draw()
 
   -- code to render imgui
@@ -229,7 +228,6 @@ love.wheelmoved = function(x, y)
   imgui.love.WheelMoved(x, y)
   if not imgui.love.GetWantCaptureMouse() then
     -- your code here
-    -- STATE.camera:dolly(y)
   end
 end
 

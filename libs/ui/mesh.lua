@@ -7,7 +7,6 @@ local falg = require "falg"
 local util = require "ui.util"
 local VertexBuffer = require "lvrm.vertexbuffer"
 local UI = require "ui"
-local Camera = require "lvrm.camera"
 
 ---@class MeshGui: MeshGuiInstance
 local MeshGui = {}
@@ -23,7 +22,6 @@ function MeshGui.new()
     splitter = util.Splitter.new(),
 
     render_texture = RenderTarget.new(),
-    camera = Camera.new(),
   }
   ---@type MeshGui
   return setmetatable(instance, MeshGui)
@@ -255,9 +253,6 @@ function MeshGui:render_selected(scene)
   self.render_texture:update_size(size.x, size.y)
   local isActive, isHovered = UI.DraggableImage("image_button", self.render_texture.colorcanvas, size)
 
-  -- update camera
-  self.camera:update(size.x, size.y, isActive, isHovered)
-
   if not self.mesh then
     return
   end
@@ -266,9 +261,12 @@ function MeshGui:render_selected(scene)
     return
   end
 
-  self.render_texture:render(function()
-    mesh:draw(falg.Mat4.new_identity(), self.camera.view, self.camera.projection, self.prim)
-  end)
+  self.render_texture:render(function(view, projectin)
+    mesh:draw(falg.Mat4.new_identity(), view, projectin, self.prim)
+  end, {
+    isActive = isActive,
+    isHovered = isHovered,
+  })
 end
 
 ---@param scene lvrm.Scene
