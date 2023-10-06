@@ -1,6 +1,6 @@
 require "lvrm.gltf_reader"
 local ffi = require "ffi"
-require "falg"
+local falg = require "falg"
 local VertexBuffer = require "lvrm.vertexbuffer"
 local Material = require "lvrm.material"
 
@@ -72,6 +72,7 @@ function Mesh.new(name, vertexbuffer, indexbuffer, submeshes, morphtargets)
   end
 
   ---@class lvrm.MeshInstance
+  ---@field aabb falg.AABB?
   local instance = {
     id = ffi.new "int[1]",
     name = name and name or "",
@@ -224,6 +225,17 @@ function Mesh.load(r, gltf_mesh, materials)
   end
 
   return Mesh.new(gltf_mesh.name, vertexbuffer, indexbuffer, submeshes, morphtargets)
+end
+
+---@return falg.AABB
+function Mesh:get_bb()
+  if not self.aabb then
+    self.aabb = falg.AABB.new()
+    for i = 0, self.vertexbuffer:count() - 1 do
+      self.aabb:extend(self.vertexbuffer.array[i].Position)
+    end
+  end
+  return self.aabb
 end
 
 ---@param model falg.Mat4

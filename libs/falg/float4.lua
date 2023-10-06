@@ -11,4 +11,6 @@ typedef struct {
 ]]
 
 ---@type falg.Float4
-return ffi.metatype("Float4", Float4)
+Float4 = ffi.metatype("Float4", Float4)
+
+return Float4

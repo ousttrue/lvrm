@@ -1,4 +1,6 @@
 local ffi = require "ffi"
+local Float3 = require "falg.float3"
+
 ffi.cdef [[
 typedef struct {
   float _11, _12, _13, _14;
@@ -274,10 +276,21 @@ function Mat4:rotation_z(rad)
   return self
 end
 
+---@param p falg.Float3
+---@return falg.Float3
+function Mat4:apply_point(p)
+  return Float3(
+    p.X * self._11 + p.Y * self._21 + p.Z * self._31,
+    p.X * self._12 + p.Y * self._22 + p.Z * self._32,
+    p.X * self._13 + p.Y * self._23 + p.Z * self._33
+  ) + Float3(self._41, self._42, self._43)
+end
+
 function Mat4.new_scale(x, y, z)
   return ffi.new("Mat4", x, 0, 0, 0, 0, y, 0, 0, 0, 0, z, 0, 0, 0, 0, 1)
 end
 
-Mat4 = ffi.metatype("Mat4", Mat4)
 ---@type falg.Mat4
+Mat4 = ffi.metatype("Mat4", Mat4)
+
 return Mat4

@@ -37,7 +37,7 @@ function RenderTarget:render(render, info)
   -- update camera
   self.camera:update(self.width, self.height, info.isActive, info.isHovered)
   if self.last_target ~= info.target then
-    -- self.camera:fit(scene)
+    self.camera:fit(info.target:get_bb())
     self.last_target = info.target
   end
 

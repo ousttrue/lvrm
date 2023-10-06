@@ -185,4 +185,28 @@ function Scene:set_time(seconds, loop, animation_selected)
   end
 end
 
+---@return falg.AABB aabb
+function Scene:get_bb()
+  local aabb = falg.AABB.new()
+  for _, root in ipairs(self.root_nodes) do
+    root:calc_world_matrix(
+      falg.Mat4.new_identity(),
+      ---@param node lvrm.Node
+      ---@param m falg.Mat4
+      function(node, m)
+        if node.mesh then
+          local mesh_aabb = node.mesh:get_bb()
+          mesh_aabb.min = m:apply_point(mesh_aabb.min)
+          mesh_aabb.max = m:apply_point(mesh_aabb.max)
+          aabb:extend(mesh_aabb.min)
+          aabb:extend(mesh_aabb.max)
+        else
+          aabb:extend(falg.Float3(m._41, m._42, m._43))
+        end
+      end
+    )
+  end
+  return aabb
+end
+
 return Scene

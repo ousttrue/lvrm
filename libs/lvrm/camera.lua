@@ -116,4 +116,22 @@ function Camera:update(width, height, isActive, isHovered)
   self:calc_matrix()
 end
 
+---@param bb falg.AABB
+function Camera:fit(bb)
+  if not bb:enabled() then
+    return
+  end
+  self.yaw = 0
+  self.pitch = 0
+  local height = bb.max.Y - bb.min.Y
+  if math.abs(height) < 1e-4 then
+    return
+  end
+  local distance = height * 0.5 / math.tan(self.fovy * 0.5)
+  self.x = (bb.max.X + bb.min.X) * 0.5
+  self.y = -(bb.max.Y + bb.min.Y) * 0.5
+  self.z = -distance
+  self:calc_matrix()
+end
+
 return Camera

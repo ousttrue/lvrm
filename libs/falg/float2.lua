@@ -15,4 +15,6 @@ function Float2:__tostring()
 end
 
 ---@type falg.Float2
-return ffi.metatype("Float2", Float2)
+Float2 = ffi.metatype("Float2", Float2)
+
+return Float2

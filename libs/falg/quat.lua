@@ -11,4 +11,6 @@ typedef struct {
 ]]
 
 ---@type falg.Quat
-return ffi.metatype("Quat", Quat)
+Quat = ffi.metatype("Quat", Quat)
+
+return Quat

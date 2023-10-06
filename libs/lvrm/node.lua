@@ -96,4 +96,14 @@ function Node:draw_recursive(parent, view, projection)
   end
 end
 
+---@param parent_matrix falg.Mat4
+---@param callback fun(lvrm.Node, falg.Mat4)
+function Node:calc_world_matrix(parent_matrix, callback)
+  local world = parent_matrix * self:local_matrix()
+  callback(self, world)
+  for _, child in ipairs(self.children) do
+    child:calc_world_matrix(world, callback)
+  end
+end
+
 return Node
