@@ -253,19 +253,20 @@ function Mesh:draw(model, view, projection, submesh_num)
 
   for i, s in ipairs(self.submeshes) do
     if not submesh_num or i == submesh_num then
-      s.material:use()
-      if s.material.color_texture then
-        self.lg_mesh:setTexture(s.material.color_texture)
-      else
-        self.lg_mesh:setTexture()
-      end
+      if s.drawcount > 0 then
+        s.material:use()
+        if s.material.color_texture then
+          self.lg_mesh:setTexture(s.material.color_texture)
+        else
+          self.lg_mesh:setTexture()
+        end
 
-      s.material:send_mat4("m_model", model)
-      s.material:send_mat4("m_view", view)
-      s.material:send_mat4("m_projection", projection)
-      assert(s.drawcount > 0, "empty submesh")
-      self.lg_mesh:setDrawRange(s.start, s.drawcount)
-      love.graphics.draw(self.lg_mesh)
+        s.material:send_mat4("m_model", model)
+        s.material:send_mat4("m_view", view)
+        s.material:send_mat4("m_projection", projection)
+        self.lg_mesh:setDrawRange(s.start, s.drawcount)
+        love.graphics.draw(self.lg_mesh)
+      end
     end
   end
 end
