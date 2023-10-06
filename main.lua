@@ -14,6 +14,10 @@ local Time = require "ui.time"
 local UI = require "ui"
 local DockingSpace = require "ui.docking_space"
 local AssetViewer = require "ui.assetviewer"
+local MeshGui = require "ui.mesh"
+local AnimationGui = require "ui.animation"
+local ShowJson = require "ui.gltf_json"
+local ShowScene = require "ui.scene"
 
 local util = require "lvrm.util"
 local Scene = require "lvrm.scene"
@@ -31,8 +35,8 @@ function State.new()
   local instance = {
     docking_space = DockingSpace.new "DOCKSPACE",
     time = Time.new(),
-    mesh = UI.MeshGui.new(),
-    animation = UI.AnimationGui.new(),
+    mesh = MeshGui.new(),
+    animation = AnimationGui.new(),
   }
   ---@type State
   return setmetatable(instance, State)
@@ -101,13 +105,13 @@ love.load = function(args)
 
   STATE.docking_space
     :add("glTF", function()
-      UI.ShowJson(STATE.json_root)
+      ShowJson(STATE.json_root)
     end)
     :no_padding()
 
   STATE.docking_space
     :add("scene", function()
-      UI.ShowScene(STATE.scene)
+      ShowScene(STATE.scene)
     end)
     :no_padding()
 
@@ -159,7 +163,7 @@ love.load = function(args)
   local r = RenderTarget.new()
   local camera = Camera.new()
   STATE.docking_space
-    :add("RenderTarget", function()
+    :add("3d view", function()
       -- update canvas size
       local size = imgui.GetContentRegionAvail()
       r:update_size(size.x, size.y)

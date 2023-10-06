@@ -3,12 +3,7 @@ local bit = require "bit"
 ---@class cimgui
 local imgui = require "cimgui"
 
-local M = {
-  ShowJson = require "ui.gltf_json",
-  ShowScene = require "ui.scene",
-  MeshGui = require "ui.mesh",
-  AnimationGui = require "ui.animation",
-}
+local M = {}
 
 ---
 --- image button. capture mouse event

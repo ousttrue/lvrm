@@ -67,16 +67,19 @@ end
 
 ---@param offset integer
 ---@param span Span
----@param prop string?
+---@param prop string
 function VertexBuffer:assign(offset, span, prop)
-  if prop then
-    for i = 0, span.len - 1 do
-      self.array[offset + i][prop] = span.ptr[i]
-    end
-  else
-    for i = 0, span.len - 1 do
-      self.array[offset + i] = span.ptr[i]
-    end
+  for i = 0, span.len - 1 do
+    self.array[offset + i][prop] = span.ptr[i]
+  end
+end
+
+---@param vertex_offset integer
+---@param offset integer
+---@param span Span
+function VertexBuffer:assign_index(vertex_offset, offset, span)
+  for i = 0, span.len - 1 do
+    self.array[offset + i] = vertex_offset + span.ptr[i]
   end
 end
 

@@ -28,21 +28,20 @@ function Camera.new()
     z = -5,
     yaw = 0,
     pitch = 0,
-    view = falg.Mat4():identity(),
+    view = falg.Mat4.new_identity(),
     -- projection
     screen_width = 100,
     screen_height = 100,
     fovy = 30 / 180 * math.pi,
-    znear = 0.1,
+    znear = 0.01,
     zfar = 100,
-    projection = falg.Mat4():identity(),
+    projection = falg.Mat4.new_identity(),
   }, Camera)
   camera:calc_matrix()
   return camera
 end
 
 function Camera:calc_matrix()
-  -- self.view:identity()
   local yaw = falg.Mat4():rotation_y(self.yaw)
   local pitch = falg.Mat4():rotation_x(self.pitch)
   self.view = yaw * pitch

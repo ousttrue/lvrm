@@ -30,7 +30,7 @@ function EuclideanTransform:matrix()
     local q = self.rotation
     m:from_quat(q.X, q.Y, q.Z, q.W)
   else
-    m:identity()
+    m = Mat4.new_identity()
   end
 
   if self.translation then

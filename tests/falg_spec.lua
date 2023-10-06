@@ -22,6 +22,8 @@ describe("falg", function()
       assert.same(l, r)
       assert.same(5, l._21)
       assert.same(l._21, r._21)
+
+      assert.same(falg.Mat4(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1), falg.Mat4.new_identity())
     end)
 
     it("scale", function()

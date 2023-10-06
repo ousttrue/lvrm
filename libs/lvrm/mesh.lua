@@ -185,7 +185,7 @@ function Mesh.load(r, gltf_mesh, materials)
     -- fill indices
     if p.indices then
       local indices_data = r:read_accessor_bytes(p.indices)
-      indexbuffer:assign(index_offset, indices_data)
+      indexbuffer:assign_index(vertex_offset, index_offset, indices_data)
       index_offset = index_offset + indices_data.len
     end
 
@@ -229,7 +229,8 @@ end
 ---@param model falg.Mat4
 ---@param view falg.Mat4
 ---@param projection falg.Mat4
-function Mesh:draw(model, view, projection)
+---@param submesh_num integer?
+function Mesh:draw(model, view, projection, submesh_num)
   if self.morphtargets then
     -- clear base mesh
     local size = ffi.sizeof(self.vertexbuffer.array)
@@ -250,20 +251,22 @@ function Mesh:draw(model, view, projection)
     self.lg_mesh:setVertices(self.lg_data)
   end
 
-  for _, s in ipairs(self.submeshes) do
-    s.material:use()
-    if s.material.color_texture then
-      self.lg_mesh:setTexture(s.material.color_texture)
-    else
-      self.lg_mesh:setTexture()
-    end
+  for i, s in ipairs(self.submeshes) do
+    if not submesh_num or i == submesh_num then
+      s.material:use()
+      if s.material.color_texture then
+        self.lg_mesh:setTexture(s.material.color_texture)
+      else
+        self.lg_mesh:setTexture()
+      end
 
-    s.material:send_mat4("m_model", model)
-    s.material:send_mat4("m_view", view)
-    s.material:send_mat4("m_projection", projection)
-    assert(s.drawcount > 0, "empty submesh")
-    self.lg_mesh:setDrawRange(s.start, s.drawcount)
-    love.graphics.draw(self.lg_mesh)
+      s.material:send_mat4("m_model", model)
+      s.material:send_mat4("m_view", view)
+      s.material:send_mat4("m_projection", projection)
+      assert(s.drawcount > 0, "empty submesh")
+      self.lg_mesh:setDrawRange(s.start, s.drawcount)
+      love.graphics.draw(self.lg_mesh)
+    end
   end
 end
 

@@ -25,7 +25,7 @@ end
 ---@param callback function
 function RenderTarget:render(callback)
   love.graphics.setCanvas { self.colorcanvas, depthstencil = self.depthcanvas }
-  love.graphics.clear(0,0,0,1)
+  love.graphics.clear(0.4, 0.4, 0.4, 1)
   callback()
   love.graphics.setCanvas()
 end

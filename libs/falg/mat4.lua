@@ -119,28 +119,8 @@ end
 -- end
 
 ---@return falg.Mat4 self
-function Mat4:identity()
-  return self:set_array {
-    1,
-    0,
-    0,
-    0,
-    --
-    0,
-    1,
-    0,
-    0,
-    --
-    0,
-    0,
-    1,
-    0,
-    --
-    0,
-    0,
-    0,
-    1,
-  }
+function Mat4.new_identity()
+  return Mat4(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)
 end
 
 ---@param r falg.Mat4

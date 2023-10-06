@@ -2,9 +2,12 @@ local bit = require "bit"
 local ffi = require "ffi"
 ---@class cimgui
 local imgui = require "cimgui"
+local falg = require "falg"
 
 local util = require "ui.util"
 local VertexBuffer = require "lvrm.vertexbuffer"
+local UI = require "ui"
+local Camera = require "lvrm.camera"
 
 ---@class MeshGui: MeshGuiInstance
 local MeshGui = {}
@@ -18,6 +21,9 @@ function MeshGui.new()
   ---@field morph integer? selected
   local instance = {
     splitter = util.Splitter.new(),
+
+    render_texture = RenderTarget.new(),
+    camera = Camera.new(),
   }
   ---@type MeshGui
   return setmetatable(instance, MeshGui)
@@ -211,7 +217,7 @@ function MeshGui:show_vertexbuffer(vertexbuffer, indexbuffer, offset, drawcount)
 end
 
 ---@param scene lvrm.Scene
-function MeshGui:render_selected(scene)
+function MeshGui:show_vertex_table(scene)
   if not self.mesh then
     return
   end
@@ -240,6 +246,29 @@ function MeshGui:render_selected(scene)
 end
 
 ---@param scene lvrm.Scene
+function MeshGui:render_selected(scene)
+  -- update canvas size
+  local size = imgui.GetContentRegionAvail()
+  self.render_texture:update_size(size.x, size.y)
+  local isActive, isHovered = UI.DraggableImage("image_button", self.render_texture.colorcanvas, size)
+
+  -- update camera
+  self.camera:update(size.x, size.y, isActive, isHovered)
+
+  if not self.mesh then
+    return
+  end
+  local mesh = scene.meshes[self.mesh]
+  if not mesh then
+    return
+  end
+
+  self.render_texture:render(function()
+    mesh:draw(falg.Mat4.new_identity(), self.camera.view, self.camera.projection, self.prim)
+  end)
+end
+
+---@param scene lvrm.Scene
 function MeshGui:ShowSelected(scene)
   if not scene then
     return
@@ -250,14 +279,35 @@ function MeshGui:ShowSelected(scene)
   imgui.PushStyleVar_Vec2(imgui.ImGuiStyleVar_WindowPadding, { 0.0, 0.0 })
   imgui.BeginChild_Str("1", ffi.new("ImVec2", -1, sz1), true)
   imgui.PopStyleVar()
-  self:show_morph_targets(scene)
+  do
+    self:show_morph_targets(scene)
+  end
   imgui.EndChild()
 
   -- imgui.SameLine()
   imgui.PushStyleVar_Vec2(imgui.ImGuiStyleVar_WindowPadding, { 0.0, 0.0 })
   imgui.BeginChild_Str("2", ffi.new("ImVec2", -1, sz2), true)
   imgui.PopStyleVar()
-  self:render_selected(scene)
+  do
+    local tab
+    if imgui.BeginTabBar "HierarchyTabs" then
+      if imgui.BeginTabItem "Table" then
+        tab = 1
+        imgui.EndTabItem()
+      end
+      if imgui.BeginTabItem "View" then
+        tab = 2
+        imgui.EndTabItem()
+      end
+      imgui.EndTabBar()
+    end
+
+    if tab == 1 then
+      self:show_vertex_table(scene)
+    else
+      self:render_selected(scene)
+    end
+  end
   imgui.EndChild()
 end
 
