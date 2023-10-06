@@ -55,7 +55,7 @@ Mesh.__index = Mesh
 ---@param name string?
 ---@param vertexbuffer VertexBuffer
 ---@param submeshes lvrm.Submesh[]
----@param indices {data: love.ByteData, format: "uint16"|"uint32"}?
+---@param indices {count: integer, data: love.ByteData, format: "uint16"|"uint32"}?
 ---@param morphtargets MorphTarget[]?
 ---@return lvrm.Mesh
 function Mesh.new(name, vertexbuffer, submeshes, indices, morphtargets)
@@ -79,6 +79,7 @@ function Mesh.new(name, vertexbuffer, submeshes, indices, morphtargets)
     lg_mesh = lg_mesh,
     submeshes = submeshes,
     morphtargets = morphtargets,
+    index_count = indices and indices.count or nil,
   }
 
   ---@type lvrm.Mesh
@@ -138,7 +139,9 @@ function Mesh.load(r, gltf_mesh, materials)
   local indices
   local p_indices
   if total_index_count > 0 then
-    indices = {}
+    indices = {
+      count = total_index_count,
+    }
     local index_type = r.root.accessors[gltf_mesh.primitives[1].indices + 1].componentType
     if index_type == 5123 then
       indices.format = "uint16"

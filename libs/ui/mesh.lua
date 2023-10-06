@@ -131,19 +131,36 @@ function MeshGui:show_morph_targets(scene)
     return
   end
 
-  util.show_table("vertexbufferTable", { "name", "morph weight" }, function()
+  local prim
+  if self.prim then
+    prim = mesh.submeshes[self.prim]
+  end
+
+  util.show_table("vertexbufferTable", { "name", "range/weight" }, function()
     do
       imgui.TableNextRow()
-      imgui.TableNextColumn()
       local is_selected = self.morph == 0
-      if self.prim then
+
+      if prim then
+        -- name
+        imgui.TableNextColumn()
         if imgui.Selectable_Bool(string.format("%s:%d", mesh.name, self.prim), is_selected) then
           self.morph = 0
         end
+
+        -- range
+        imgui.TableNextColumn()
+        imgui.TextUnformatted(string.format("%d-%d", prim.start - 1, prim.start + prim.drawcount))
       else
+        -- name
+        imgui.TableNextColumn()
         if imgui.Selectable_Bool(string.format("%s", mesh.name), is_selected) then
           self.morph = 0
         end
+
+        -- range
+        imgui.TableNextColumn()
+        imgui.TextUnformatted(string.format("0-%d", mesh.index_count))
       end
     end
 
@@ -163,7 +180,9 @@ function MeshGui:show_morph_targets(scene)
 end
 
 ---@param vertexbuffer VertexBuffer
-function MeshGui:show_vertexbuffer(vertexbuffer)
+---@param offset integer?
+---@param drawcount integer?
+function MeshGui:show_vertexbuffer(vertexbuffer, offset, drawcount)
   local cols = { "i" }
   local props = {}
   for i, f in ipairs(vertexbuffer.format) do
@@ -171,9 +190,12 @@ function MeshGui:show_vertexbuffer(vertexbuffer)
     table.insert(props, f[1]:sub(7)) -- remove prefix Vertex
   end
 
+  offset = offset and offset or 0
+  drawcount = drawcount and drawcount or vertexbuffer:count()
+
   util.show_table("vertexBufferTable", cols, function()
     local count = vertexbuffer:count()
-    for i = 0, count - 1 do
+    for i = offset, offset + drawcount - 1 do
       imgui.TableNextRow()
       imgui.TableNextColumn()
       imgui.TextUnformatted(string.format("%d", i))
@@ -199,12 +221,21 @@ function MeshGui:render_selected(scene)
     return
   end
 
+  local prim = mesh.submeshes[self.prim]
   if self.morph == 0 then
-    -- TODO: show mesh vertexbuffer
+    if prim then
+      self:show_vertexbuffer(mesh.vertexbuffer, prim.start - 1, prim.drawcount)
+    else
+      self:show_vertexbuffer(mesh.vertexbuffer)
+    end
   else
     local t = mesh.morphtargets[self.morph]
     if t then
-      self:show_vertexbuffer(t.vertexbuffer)
+      if prim then
+        self:show_vertexbuffer(t.vertexbuffer, prim.start - 1, prim.drawcount)
+      else
+        self:show_vertexbuffer(t.vertexbuffer)
+      end
     end
   end
 end
