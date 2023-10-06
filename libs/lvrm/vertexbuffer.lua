@@ -16,7 +16,7 @@ typedef struct {
 local VertexBuffer = {}
 VertexBuffer.__index = VertexBuffer
 
-VertexBuffer.VERTEX_FORMAT = {
+VertexBuffer.TYPE_MAP = {
   Vertex = {
     { "VertexPosition", "float", 3 },
     { "VertexTexCoord", "float", 2 },
@@ -26,17 +26,18 @@ VertexBuffer.VERTEX_FORMAT = {
     { "VertexPosition", "float", 3 },
     { "VertexNormal", "float", 3 },
   },
+  uint32_t = "uint32",
+  uint16_t = "uint16",
 }
 
 ---@param array ffi.cdata* Vertex[N]
----@param format table
+---@param value_type string
 ---@return VertexBuffer
-function VertexBuffer.new(array, format)
-  assert(format)
+function VertexBuffer.new(array, value_type)
   ---@class VertexBufferInstance
   local instance = {
     array = array,
-    format = format,
+    value_type = value_type,
   }
   ---@type VertexBuffer
   return setmetatable(instance, VertexBuffer)
@@ -45,21 +46,14 @@ end
 ---@return VertexBuffer
 function VertexBuffer.create(t, count)
   ---@type ffi.cdecl*
-  local ct = string.format("Vertex[%d]", count)
+  local ct = string.format("%s[%d]", t, count)
   local array = ffi.new(ct)
-  local f = VertexBuffer.VERTEX_FORMAT[t]
-  assert(f)
-  return VertexBuffer.new(array, f)
+  return VertexBuffer.new(array, t)
 end
 
 ---@return integer
 function VertexBuffer:count()
-  return ffi.sizeof(self.array) / self:item_size()
-end
-
----@return integer
-function VertexBuffer:item_size()
-  return ffi.sizeof(self.array[0])
+  return ffi.sizeof(self.array) / ffi.sizeof(self.value_type)
 end
 
 ---@param usage "static" | "dynamic" | "stream"
@@ -73,10 +67,16 @@ end
 
 ---@param offset integer
 ---@param span Span
----@param prop string
+---@param prop string?
 function VertexBuffer:assign(offset, span, prop)
-  for i = 0, span.len - 1 do
-    self.array[offset + i][prop] = span.ptr[i]
+  if prop then
+    for i = 0, span.len - 1 do
+      self.array[offset + i][prop] = span.ptr[i]
+    end
+  else
+    for i = 0, span.len - 1 do
+      self.array[offset + i] = span.ptr[i]
+    end
   end
 end
 

@@ -18,7 +18,7 @@ function MorphTarget.new(name, vertex_count)
   ---@class MorphTargetInstance
   local instance = {
     name = name,
-    value = ffi.new "float[1]",
+    weight = ffi.new "float[1]",
     vertexbuffer = VertexBuffer.create("MorphVertex", vertex_count),
   }
   ---@type MorphTarget
@@ -54,20 +54,21 @@ Mesh.__index = Mesh
 
 ---@param name string?
 ---@param vertexbuffer VertexBuffer
+---@param indexbuffer VertexBuffer? --{count: integer, data: love.ByteData, format: "uint16"|"uint32"}?
 ---@param submeshes lvrm.Submesh[]
----@param indices {count: integer, data: love.ByteData, format: "uint16"|"uint32"}?
 ---@param morphtargets MorphTarget[]?
 ---@return lvrm.Mesh
-function Mesh.new(name, vertexbuffer, submeshes, indices, morphtargets)
+function Mesh.new(name, vertexbuffer, indexbuffer, submeshes, morphtargets)
   ---@type integer
   local size = ffi.sizeof(vertexbuffer.array)
   local lg_data = love.data.newByteData(size)
   ffi.copy(lg_data:getFFIPointer(), vertexbuffer.array, size)
-  local lg_mesh = love.graphics.newMesh(vertexbuffer.format, lg_data, "triangles", "stream")
+  local lg_mesh = love.graphics.newMesh(VertexBuffer.TYPE_MAP[vertexbuffer.value_type], lg_data, "triangles", "stream")
 
-  -- e  local lg_mesh = vertexbuffer:to_lg_mesh(morphtargets and "stream" or "static")
-  if indices then
-    lg_mesh:setVertexMap(indices.data, indices.format)
+  if indexbuffer then
+    local data = love.data.newByteData(ffi.sizeof(indexbuffer.array))
+    ffi.copy(data:getFFIPointer(), indexbuffer.array, ffi.sizeof(indexbuffer.array))
+    lg_mesh:setVertexMap(data, VertexBuffer.TYPE_MAP[indexbuffer.value_type])
   end
 
   ---@class lvrm.MeshInstance
@@ -75,11 +76,12 @@ function Mesh.new(name, vertexbuffer, submeshes, indices, morphtargets)
     id = ffi.new "int[1]",
     name = name and name or "",
     vertexbuffer = vertexbuffer,
+    indexbuffer = indexbuffer,
     lg_data = lg_data,
     lg_mesh = lg_mesh,
     submeshes = submeshes,
     morphtargets = morphtargets,
-    index_count = indices and indices.count or nil,
+    index_count = indexbuffer and indexbuffer:count() or nil,
   }
 
   ---@type lvrm.Mesh
@@ -96,9 +98,9 @@ function Mesh.new_triangle()
   buffer[1].Position.Y = -1
   buffer[2].Position.X = 0
   buffer[2].Position.Y = 1
-  local vertexbuffer = VertexBuffer.new(buffer, VertexBuffer.VERTEX_FORMAT.Vertex)
+  local vertexbuffer = VertexBuffer.new(buffer, "Vertex")
 
-  return Mesh.new("__triangle__", vertexbuffer, {
+  return Mesh.new("__triangle__", vertexbuffer, nil, {
     Submesh.new(Material.new("default", "default"), 1, 3), -- 1origin
   })
 end
@@ -136,21 +138,21 @@ function Mesh.load(r, gltf_mesh, materials)
   end
 
   -- make indices
-  local indices
-  local p_indices
+  local indexbuffer
   if total_index_count > 0 then
-    indices = {
-      count = total_index_count,
-    }
     local index_type = r.root.accessors[gltf_mesh.primitives[1].indices + 1].componentType
     if index_type == 5123 then
-      indices.format = "uint16"
-      indices.data = love.data.newByteData(2 * total_index_count)
-      p_indices = ffi.cast("unsigned short*", indices.data:getFFIPointer())
+      -- indices.format = "uint16"
+      -- indices.data = love.data.newByteData(2 * total_index_count)
+      -- p_indices = ffi.cast("unsigned short*", indices.data:getFFIPointer())
+      local array = ffi.new(string.format("uint16_t[%d]", total_index_count))
+      indexbuffer = VertexBuffer.new(array, "uint16_t")
     elseif index_type == 5125 then
-      indices.format = "uint32"
-      indices.data = love.data.newByteData(4 * total_index_count)
-      p_indices = ffi.cast("unsigned int*", indices.data:getFFIPointer())
+      -- indices.format = "uint32"
+      -- indices.data = love.data.newByteData(4 * total_index_count)
+      -- p_indices = ffi.cast("unsigned int*", indices.data:getFFIPointer())
+      local array = ffi.new(string.format("uint32_t[%d]", total_index_count))
+      indexbuffer = VertexBuffer.new(array, "uint32_t")
     else
       assert(false, "unknown index type", index_type)
     end
@@ -183,10 +185,8 @@ function Mesh.load(r, gltf_mesh, materials)
     -- fill indices
     if p.indices then
       local indices_data = r:read_accessor_bytes(p.indices)
-      for i = 0, indices_data.len - 1 do
-        p_indices[index_offset] = indices_data.ptr[i] + vertex_offset
-        index_offset = index_offset + 1
-      end
+      indexbuffer:assign(index_offset, indices_data)
+      index_offset = index_offset + indices_data.len
     end
 
     -- fill vertices
@@ -223,7 +223,7 @@ function Mesh.load(r, gltf_mesh, materials)
     vertex_offset = vertex_offset + positions_data.len
   end
 
-  return Mesh.new(gltf_mesh.name, vertexbuffer, submeshes, indices, morphtargets)
+  return Mesh.new(gltf_mesh.name, vertexbuffer, indexbuffer, submeshes, morphtargets)
 end
 
 ---@param model falg.Mat4
@@ -238,7 +238,7 @@ function Mesh:draw(model, view, projection)
 
     -- add morph target
     for _, t in ipairs(self.morphtargets) do
-      local w = t.value[0]
+      local w = t.weight[0]
       if w > 0 then
         for i = 0, t.vertexbuffer:count() do
           ptr[i].Position = ptr[i].Position + t.vertexbuffer.array[i].Position:scale(w)

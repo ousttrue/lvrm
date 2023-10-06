@@ -12,12 +12,14 @@ Span.__index = Span
 
 ---@param ptr ffi.cdata* T*
 ---@param len integer T count
+---@param stride integer?
 ---@return Span
-function Span.new(ptr, len)
+function Span.new(ptr, len, stride)
   ---@class SpanInstance
   local instance = {
     ptr = ptr,
     len = len,
+    stride = stride,
   }
   ---@type Span
   return setmetatable(instance, Span)
@@ -27,7 +29,7 @@ end
 ---@param len integer
 ---@return Span
 function Span:subspan(offset, len)
-  return Span.new(self.ptr + offset, len)
+  return Span.new(self.ptr + offset, len, self.stride)
 end
 
 ---@param t string
@@ -35,7 +37,7 @@ end
 ---@retun Span
 function Span:cast(t, count)
   local ct = t .. "*"
-  return Span.new(ffi.cast(ct, self.ptr), count)
+  return Span.new(ffi.cast(ct, self.ptr), count, ffi.sizeof(t))
 end
 
 ---@type lvrm.BytesReader
@@ -195,7 +197,7 @@ function GltfReader:read_bufferview_bytes(bufferview_index)
 
   local bin = self:get_buffer(buffer_view.buffer)
 
-  local span = Span.new(ffi.cast("uint8_t*", bin), ffi.sizeof(bin))
+  local span = Span.new(ffi.cast("uint8_t*", bin), ffi.sizeof(bin), 1)
   return span:subspan(buffer_view_offset, buffer_view.byteLength)
 end
 

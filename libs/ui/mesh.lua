@@ -4,6 +4,7 @@ local ffi = require "ffi"
 local imgui = require "cimgui"
 
 local util = require "ui.util"
+local VertexBuffer = require "lvrm.vertexbuffer"
 
 ---@class MeshGui: MeshGuiInstance
 local MeshGui = {}
@@ -150,7 +151,7 @@ function MeshGui:show_morph_targets(scene)
 
         -- range
         imgui.TableNextColumn()
-        imgui.TextUnformatted(string.format("%d-%d", prim.start - 1, prim.start + prim.drawcount))
+        imgui.TextUnformatted(string.format("%d-%d", prim.start - 1, prim.start - 1 + prim.drawcount))
       else
         -- name
         imgui.TableNextColumn()
@@ -174,36 +175,34 @@ function MeshGui:show_morph_targets(scene)
 
       imgui.TableNextColumn()
       imgui.SetNextItemWidth(-1)
-      imgui.SliderFloat(string.format("##%s", t.name), t.value, 0, 1)
+      imgui.SliderFloat(string.format("##%s", t.name), t.weight, 0, 1)
     end
   end)
 end
 
 ---@param vertexbuffer VertexBuffer
----@param offset integer?
----@param drawcount integer?
-function MeshGui:show_vertexbuffer(vertexbuffer, offset, drawcount)
+---@param indices VertexBuffer
+---@param offset integer
+---@param drawcount integer
+function MeshGui:show_vertexbuffer(vertexbuffer, indexbuffer, offset, drawcount)
   local cols = { "i" }
   local props = {}
-  for i, f in ipairs(vertexbuffer.format) do
+  for i, f in ipairs(VertexBuffer.TYPE_MAP[vertexbuffer.value_type]) do
     table.insert(cols, f[1])
     table.insert(props, f[1]:sub(7)) -- remove prefix Vertex
   end
 
-  offset = offset and offset or 0
-  drawcount = drawcount and drawcount or vertexbuffer:count()
-
   util.show_table("vertexBufferTable", cols, function()
-    local count = vertexbuffer:count()
     for i = offset, offset + drawcount - 1 do
       imgui.TableNextRow()
       imgui.TableNextColumn()
       imgui.TextUnformatted(string.format("%d", i))
 
+      local index = indexbuffer.array[i]
+      local vertex = vertexbuffer.array[index]
+      assert(vertex)
       for j, prop in ipairs(props) do
         imgui.TableNextColumn()
-        local vertex = vertexbuffer.array[i]
-        assert(vertex)
         local str = tostring(vertex[prop])
         imgui.TextUnformatted(str)
       end
@@ -224,17 +223,17 @@ function MeshGui:render_selected(scene)
   local prim = mesh.submeshes[self.prim]
   if self.morph == 0 then
     if prim then
-      self:show_vertexbuffer(mesh.vertexbuffer, prim.start - 1, prim.drawcount)
+      self:show_vertexbuffer(mesh.vertexbuffer, mesh.indexbuffer, prim.start - 1, prim.drawcount)
     else
-      self:show_vertexbuffer(mesh.vertexbuffer)
+      self:show_vertexbuffer(mesh.vertexbuffer, mesh.indexbuffer, 0, mesh.index_count)
     end
   else
     local t = mesh.morphtargets[self.morph]
     if t then
       if prim then
-        self:show_vertexbuffer(t.vertexbuffer, prim.start - 1, prim.drawcount)
+        self:show_vertexbuffer(t.vertexbuffer, mesh.indexbuffer, prim.start - 1, prim.drawcount)
       else
-        self:show_vertexbuffer(t.vertexbuffer)
+        self:show_vertexbuffer(t.vertexbuffer, mesh.indexbuffer, 0, mesh.index_count)
       end
     end
   end

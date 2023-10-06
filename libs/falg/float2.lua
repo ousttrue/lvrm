@@ -9,5 +9,10 @@ typedef struct {
 } Float2;
 ]]
 
+---@return string
+function Float2:__tostring()
+  return string.format("[%0.2f, %0.2f]", self.X, self.Y)
+end
+
 ---@type falg.Float2
 return ffi.metatype("Float2", Float2)
