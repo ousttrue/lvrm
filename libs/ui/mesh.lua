@@ -191,7 +191,7 @@ end
 ---@param offset integer
 ---@param drawcount integer
 function MeshGui:show_vertexbuffer(vertexbuffer, indexbuffer, offset, drawcount)
-  local cols = { "i" }
+  local cols = { "i", "index" }
   local props = {}
   for i, f in ipairs(VertexBuffer.TYPE_MAP[vertexbuffer.value_type]) do
     table.insert(cols, f[1])
@@ -204,7 +204,10 @@ function MeshGui:show_vertexbuffer(vertexbuffer, indexbuffer, offset, drawcount)
       imgui.TableNextColumn()
       imgui.TextUnformatted(string.format("%d", i))
 
+      imgui.TableNextColumn()
       local index = indexbuffer.array[i]
+      imgui.TextUnformatted(string.format("%d", index))
+
       local vertex = vertexbuffer.array[index]
       assert(vertex)
       for j, prop in ipairs(props) do
