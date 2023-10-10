@@ -1,4 +1,5 @@
 local ffi = require "ffi"
+
 local Float3 = require "falg.float3"
 local Quat = require "falg.quat"
 
@@ -126,7 +127,7 @@ function Mat4.new_identity()
   return Mat4(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)
 end
 
----@param r falg.Mat4
+---@param r falg.Mat4|number
 function Mat4:__mul(r)
   local m = Mat4()
   m._11 = self._11 * r._11 + self._12 * r._21 + self._13 * r._31 + self._14 * r._41
@@ -192,12 +193,8 @@ end
 ---@param y number
 ---@param z number
 ---@return falg.Mat4 self
-function Mat4:translation(x, y, z)
-  self._41 = x
-  self._42 = y
-  self._43 = z
-  ---@type falg.Mat4
-  return self
+function Mat4.new_translation(x, y, z)
+  return Mat4(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, x, y, z, 1)
 end
 
 ---@param x number
@@ -226,17 +223,10 @@ end
 --- sc
 ---@param rad number
 ---@return falg.Mat4 self
-function Mat4:rotation_x(rad)
+function Mat4.new_rotation_x(rad)
   local c = math.cos(rad)
   local s = math.sin(rad)
-  self._11 = 1
-  self._22 = c
-  self._33 = c
-  self._44 = 1
-  self._23 = -s
-  self._32 = s
-  ---@type falg.Mat4
-  return self
+  return Mat4(1, 0, 0, 0, 0, c, -s, 0, 0, s, c, 0, 0, 0, 0, 1)
 end
 
 ---Update 3x3
@@ -277,8 +267,77 @@ function Mat4:rotation_z(rad)
   return self
 end
 
+---@param forward falg.Float3
+---@param up falg.Float3
+---@return falg.Quat
+function Mat4.from_forward_up(forward, up)
+  local z = forward:normalized()
+  local x = Float3.cross(up, z):normalized()
+  local y = Float3.cross(z, x)
+  return Mat4(x.X, x.Y, x.Z, 0, y.X, y.Y, y.Z, 0, z.X, z.Y, z.Z, 0, 0, 0, 0, 1)
+end
+
+---@return falg.Quat
+function Mat4:to_quat()
+  local elem = {
+    self._11 - self._22 - self._33 + 1.0,
+    -self._11 + self._22 - self._33 + 1.0,
+    -self._11 - self._22 + self._33 + 1.0,
+    self._11 + self._22 + self._33 + 1.0,
+  }
+  local biggestIndex = 1
+  for i = 2, 4 do
+    if elem[i] > elem[biggestIndex] then
+      biggestIndex = i
+    end
+  end
+  assert(elem[biggestIndex] >= 0.0)
+
+  local v = math.sqrt(elem[biggestIndex]) * 0.5
+  local mult = 0.25 / v
+  if biggestIndex == 1 then
+    return Quat(v, (self._12 + self._21) * mult, (self._31 + self._13) * mult, (self._23 - self._32) * mult)
+  elseif biggestIndex == 2 then
+    return Quat((self._12 + self._21) * mult, v, (self._23 + self._32) * mult, (self._31 - self._13) * mult)
+  elseif biggestIndex == 3 then
+    return Quat((self._31 + self._13) * mult, (self._23 + self._32) * mult, v, (self._12 - self._21) * mult)
+  elseif biggestIndex == 4 then
+    return Quat((self._23 - self._32) * mult, (self._31 - self._13) * mult, (self._12 - self._21) * mult, v)
+  else
+    assert(false)
+  end
+end
+
+---@param x number
+---@param y number
+---@param z number
+---@return falg.Mat4
 function Mat4.new_scale(x, y, z)
-  return ffi.new("Mat4", x, 0, 0, 0, 0, y, 0, 0, 0, 0, z, 0, 0, 0, 0, 1)
+  return Mat4(x, 0, 0, 0, 0, y, 0, 0, 0, 0, z, 0, 0, 0, 0, 1)
+end
+
+---@param p falg.Float3
+---@return falg.Float3
+function Mat4:transform_position(p)
+  local x = p.X * self._11 + p.Y * self._21 + p.Z * self._31 + self._41
+  local y = p.X * self._12 + p.Y * self._22 + p.Z * self._32 + self._42
+  local z = p.X * self._13 + p.Y * self._23 + p.Z * self._33 + self._43
+  return Float3(x, y, z)
+end
+
+---@return falg.Float3 t
+---@return falg.Quat r
+---@return falg.Float3 s
+function Mat4:decompose()
+  local t = Float3(self._41, self._42, self._43)
+  local rot = Mat4.from_forward_up(Float3(self._31, self._32, self._33), Float3(self._21, self._22, self._23))
+  local r = rot:to_quat()
+  local s = Float3(
+    Float3(self._11, self._12, self._13):norm(),
+    Float3(self._11, self._12, self._13):norm(),
+    Float3(self._11, self._12, self._13):norm()
+  )
+  return t, r, s
 end
 
 ---@param p falg.Float3

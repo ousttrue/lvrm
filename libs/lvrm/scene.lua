@@ -3,6 +3,7 @@ local Material = require "lvrm.material"
 local Mesh = require "lvrm.mesh"
 local Node = require "lvrm.node"
 local Animation = require "lvrm.animation"
+local Skinning = require "lvrm.skinning"
 local falg = require "falg"
 
 ---@class lvrm.Scene: lvrm.SceneInstance
@@ -23,6 +24,8 @@ function Scene.new()
     nodes = {},
     ---@type lvrm.Node[]
     root_nodes = {},
+    ---@type lvrm.Skinning[]
+    skins = {},
     ---@type lvrm.Animation[]
     animations = {},
   }
@@ -128,6 +131,21 @@ function Scene.load(reader)
     end
   end
 
+  -- skin
+  if reader.root.skins then
+    for i, gltf_skin in ipairs(reader.root.skins) do
+      local inversed_bind_data = reader:read_accessor_bytes(gltf_skin.inverseBindMatrices)
+      local skin = Skinning.load(gltf_skin, scene.nodes, inversed_bind_data)
+      table.insert(scene.skins, skin)
+    end
+  end
+
+  for i, gltf_node in ipairs(reader.root.nodes) do
+    if gltf_node.skin then
+      scene.nodes[i].skinning = scene.skins[gltf_node.skin + 1] -- 0to1 origin
+    end
+  end
+
   -- animation
   if reader.root.animations then
     for i, gltf_animation in ipairs(reader.root.animations) do
@@ -149,9 +167,20 @@ end
 ---@param view falg.Mat4
 ---@param projection falg.Mat4
 function Scene:draw(view, projection)
-  love.graphics.push "all"
+  -- update world matrix
   for _, n in ipairs(self.root_nodes) do
-    n:draw_recursive(falg.Mat4.new_identity(), view, projection)
+    n:update_recursive(falg.Mat4.new_identity(), view, projection)
+  end
+  -- update skinning matrix
+  for i, skin in ipairs(self.skins) do
+    skin:update(self.nodes)
+  end
+
+  love.graphics.push "all"
+  for i, n in ipairs(self.nodes) do
+    if n.mesh then
+      n.mesh:draw(n.world_matrix, view, projection, nil, n.skinning)
+    end
   end
   love.graphics.pop()
 end

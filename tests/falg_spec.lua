@@ -44,5 +44,17 @@ describe("falg", function()
       local expected = falg.Mat4(1, 0, 0, 0, 0, 2, 0, 0, 0, 0, 3, 0, 0, 0, 0, 1)
       assert.same(expected, m)
     end)
+
+    it("decompose", function()
+      local t = falg.Mat4.new_translation(1, 2, 3)
+      local r = falg.Mat4.new_rotation_x(math.pi)
+      local s = falg.Mat4.new_scale(3, 4, 5)
+      local m = s * r * t
+
+      local dt, dr, ds = m:decompose()
+      assert.same(t, dt)
+      assert.same(r, dr)
+      assert.same(s, ds)
+    end)
   end)
 end)

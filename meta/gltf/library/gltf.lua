@@ -131,6 +131,7 @@ local Sampler_Wrap = {
 ---@class gltf.Mesh: gltf.ChildOfRootProperty
 ---@field primitives gltf.Primitive[]
 
+--- https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/schema/node.schema.json
 ---@class gltf.Node: gltf.ChildOfRootProperty
 ---@field children integer[]?
 ---@field matrix number[]?
@@ -139,6 +140,12 @@ local Sampler_Wrap = {
 ---@field translation number[]?
 ---@field mesh integer?
 ---@field skin integer?
+
+--- https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/schema/skin.schema.json
+---@class gltf.Skin: gltf.ChildOfRootProperty
+---@field inverseBindMatrices integer?
+---@field skeleton integer?
+---@field joints integer[]
 
 --- https://github.com/KhronosGroup/glTF/blob/main/specification/2.0/schema/scene.schema.json
 ---@class gltf.Scene: gltf.ChildOfRootProperty
@@ -177,6 +184,7 @@ local Sampler_Wrap = {
 ---@field materials gltf.Material[]?
 ---@field meshes gltf.Mesh[]?
 ---@field nodes gltf.Node[]?
+---@field skins gltf.Skin[]?
 ---@field scenes gltf.Scene[]?
 ---@field scene integer?
 ---@field animations gltf.Animation[]?

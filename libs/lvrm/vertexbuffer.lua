@@ -8,6 +8,13 @@ typedef struct {
 } Vertex;
 typedef struct {
   Float3 Position;
+  Float2 TexCoord;
+  Float3 Normal;
+  Float4 Joints;
+  Float4 Weights;
+} VertexSkinning;
+typedef struct {
+  Float3 Position;
   Float3 Normal;
 } MorphVertex;
 ]]
@@ -21,6 +28,13 @@ VertexBuffer.TYPE_MAP = {
     { "VertexPosition", "float", 3 },
     { "VertexTexCoord", "float", 2 },
     { "VertexNormal", "float", 3 },
+  },
+  VertexSkinning = {
+    { "VertexPosition", "float", 3 },
+    { "VertexTexCoord", "float", 2 },
+    { "VertexNormal", "float", 3 },
+    { "VertexJoints", "float", 4 },
+    { "VertexWeights", "float", 4 },
   },
   MorphVertex = {
     { "VertexPosition", "float", 3 },
@@ -66,7 +80,7 @@ function VertexBuffer:to_lg_mesh(usage)
 end
 
 ---@param offset integer
----@param span Span
+---@param span lvrm.Span
 ---@param prop string
 function VertexBuffer:assign(offset, span, prop)
   for i = 0, span.len - 1 do
@@ -76,7 +90,7 @@ end
 
 ---@param vertex_offset integer
 ---@param offset integer
----@param span Span
+---@param span lvrm.Span
 function VertexBuffer:assign_index(vertex_offset, offset, span)
   for i = 0, span.len - 1 do
     self.array[offset + i] = vertex_offset + span.ptr[i]

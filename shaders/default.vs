@@ -1,3 +1,4 @@
+attribute vec3 VertexNormal;
 uniform mat4 m_model;
 uniform mat4 m_view;
 uniform mat4 m_projection;

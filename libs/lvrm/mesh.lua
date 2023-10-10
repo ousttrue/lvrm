@@ -143,15 +143,9 @@ function Mesh.load(r, gltf_mesh, materials)
   if total_index_count > 0 then
     local index_type = r.root.accessors[gltf_mesh.primitives[1].indices + 1].componentType
     if index_type == 5123 then
-      -- indices.format = "uint16"
-      -- indices.data = love.data.newByteData(2 * total_index_count)
-      -- p_indices = ffi.cast("unsigned short*", indices.data:getFFIPointer())
       local array = ffi.new(string.format("uint16_t[%d]", total_index_count))
       indexbuffer = VertexBuffer.new(array, "uint16_t")
     elseif index_type == 5125 then
-      -- indices.format = "uint32"
-      -- indices.data = love.data.newByteData(4 * total_index_count)
-      -- p_indices = ffi.cast("unsigned int*", indices.data:getFFIPointer())
       local array = ffi.new(string.format("uint32_t[%d]", total_index_count))
       indexbuffer = VertexBuffer.new(array, "uint32_t")
     else
@@ -175,7 +169,15 @@ function Mesh.load(r, gltf_mesh, materials)
   --
   -- create VertexBuffer
   --
-  local vertexbuffer = VertexBuffer.create("Vertex", total_vertex_count)
+  local has_skinning = false
+  for _, p in ipairs(gltf_mesh.primitives) do
+    if p.attributes.JOINTS_0 and p.attributes.WEIGHTS_0 then
+      has_skinning = true
+      break
+    end
+  end
+
+  local vertexbuffer = VertexBuffer.create(has_skinning and "VertexSkinning" or "Vertex", total_vertex_count)
   local vertex_offset = 0
   local index_offset = 0
 
@@ -201,7 +203,20 @@ function Mesh.load(r, gltf_mesh, materials)
       vertexbuffer:assign(vertex_offset, uv_data, "TexCoord")
     end
 
-    -- TODO: skinning
+    if attributes.JOINTS_0 and attributes.WEIGHTS_0 then
+      local joint_data = r:read_accessor_bytes(attributes.JOINTS_0)
+      for i = 0, joint_data.len - 1 do
+        local src = joint_data.ptr[i]
+        local dst = vertexbuffer.array[vertex_offset + i]
+        dst.Joints.X = src.X
+        dst.Joints.Y = src.Y
+        dst.Joints.Z = src.Z
+        dst.Joints.W = src.W
+      end
+
+      local weight_data = r:read_accessor_bytes(attributes.WEIGHTS_0)
+      vertexbuffer:assign(vertex_offset, weight_data, "Weights")
+    end
 
     -- morph target
     if p.targets then
@@ -241,8 +256,11 @@ end
 ---@param model falg.Mat4
 ---@param view falg.Mat4
 ---@param projection falg.Mat4
----@param submesh_num integer?
-function Mesh:draw(model, view, projection, submesh_num)
+---@param submesh_num integer? draw only specific submesh
+---@param skinning lvrm.Skinning?
+function Mesh:draw(model, view, projection, submesh_num, skinning)
+  local update_mesh = false
+
   if self.morphtargets then
     -- clear base mesh
     local size = ffi.sizeof(self.vertexbuffer.array)
@@ -259,7 +277,29 @@ function Mesh:draw(model, view, projection, submesh_num)
       end
     end
 
-    -- update mesh
+    update_mesh = true
+  end
+
+  if skinning and not Material.GPU_SKINNING then
+    local ptr = ffi.cast("Vertex*", self.lg_data:getFFIPointer())
+    for i = 0, self.vertexbuffer:count() - 1 do
+      local v = self.vertexbuffer.array[i]
+      local p = v.Position
+      local j = v.Joints
+      local w = v.Weights
+
+      local dst = falg.Float3()
+      dst = dst + skinning:calc(p, j.X, w.X)
+      dst = dst + skinning:calc(p, j.Y, w.Y)
+      dst = dst + skinning:calc(p, j.Z, w.Z)
+      dst = dst + skinning:calc(p, j.W, w.W)
+      ptr[i].Position = dst
+    end
+
+    update_mesh = true
+  end
+
+  if update_mesh then
     self.lg_mesh:setVertices(self.lg_data)
   end
 
@@ -276,6 +316,11 @@ function Mesh:draw(model, view, projection, submesh_num)
         s.material:send_mat4("m_model", model)
         s.material:send_mat4("m_view", view)
         s.material:send_mat4("m_projection", projection)
+
+        if s.material.GPU_SKINNING and skinning then
+          skinning:send("joints_matrices", s.material.shader)
+        end
+
         self.lg_mesh:setDrawRange(s.start, s.drawcount)
         love.graphics.draw(self.lg_mesh)
       end
