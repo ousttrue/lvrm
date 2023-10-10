@@ -3,6 +3,7 @@ local Material = require "lvrm.material"
 local Mesh = require "lvrm.mesh"
 local Node = require "lvrm.node"
 local Animation = require "lvrm.animation"
+local Skinning = require "lvrm.skinning"
 local falg = require "falg"
 
 ---@class lvrm.Scene: lvrm.SceneInstance
@@ -23,6 +24,8 @@ function Scene.new()
     nodes = {},
     ---@type lvrm.Node[]
     root_nodes = {},
+    ---@type lvrm.Skinning
+    skins = {},
     ---@type lvrm.Animation[]
     animations = {},
   }
@@ -125,6 +128,21 @@ function Scene.load(reader)
       if not node.parent then
         table.insert(scene.root_nodes, node)
       end
+    end
+  end
+
+  -- skins TODO:
+  if reader.root.skins then
+    for i, gltf_skin in ipairs(reader.root.skins) do
+      local inversed_bind_data = reader:read_accessor_bytes(gltf_skin.inverseBindMatrices)
+      local skin = Skinning.load(gltf_skin, scene.nodes, inversed_bind_data)
+      table.insert(scene.skins, skin)
+    end
+  end
+
+  for i, gltf_node in ipairs(reader.root.nodes) do
+    if gltf_node.skin then
+      scene.nodes[i].skinning = scene.skins[gltf_node.skin]
     end
   end
 

@@ -1,6 +1,8 @@
 local ffi = require "ffi"
 local falg = require "falg"
 
+local Skinning = require "lvrm.Skinning"
+
 ---@class lvrm.Node: lvrm.NodeInstance
 local Node = {}
 Node.__index = Node
@@ -12,13 +14,13 @@ function Node.new(name)
   ---@field parent lvrm.Node?
   ---@field mesh lvrm.Mesh?
   ---@field local_scale falg.Float3?
+  ---@field skinning lvrm.Skinning?
   local instance = {
     id = ffi.new "int[1]",
     ---@type string
     name = name,
     ---@type lvrm.Node[]
     children = {},
-
     ---@type falg.EuclideanTransform
     local_transform = falg.EuclideanTransform.new(),
   }
@@ -88,7 +90,7 @@ end
 function Node:draw_recursive(parent, view, projection)
   local world = self:local_matrix() * parent
   if self.mesh then
-    self.mesh:draw(world, view, projection)
+    self.mesh:draw(world, view, projection, nil, self.skinning)
   end
 
   for _, child in ipairs(self.children) do

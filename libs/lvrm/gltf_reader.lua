@@ -1,44 +1,11 @@
 local ffi = require "ffi"
 local util = require "lvrm.util"
+local Span = require "lvrm.span"
 
 local GLB_MAGIC = "glTF"
 local GLB_VERSION = 2
 local JSON_CHUNK_TYPE = "JSON"
 local BIN_CHUNK_TYPE = "BIN\0"
-
----@class Span: SpanInstance
-local Span = {}
-Span.__index = Span
-
----@param ptr ffi.cdata* T*
----@param len integer T count
----@param stride integer?
----@return Span
-function Span.new(ptr, len, stride)
-  ---@class SpanInstance
-  local instance = {
-    ptr = ptr,
-    len = len,
-    stride = stride,
-  }
-  ---@type Span
-  return setmetatable(instance, Span)
-end
-
----@param offset integer
----@param len integer
----@return Span
-function Span:subspan(offset, len)
-  return Span.new(self.ptr + offset, len, self.stride)
-end
-
----@param t string
----@param count integer
----@retun Span
-function Span:cast(t, count)
-  local ct = t .. "*"
-  return Span.new(ffi.cast(ct, self.ptr), count, ffi.sizeof(t))
-end
 
 ---@type lvrm.BytesReader
 local BytesReader = require "lvrm.bytes_reader"
@@ -232,9 +199,14 @@ function GltfReader:read_accessor_bytes(accessor_index)
 
     -- return accessor_bytes
     if accessor.componentType == 5123 then
-      -- short
-      assert(accessor.type == "SCALAR")
-      return accessor_bytes:cast("unsigned short", accessor.count)
+      -- uint16_t
+      if accessor.type == "SCALAR" then
+        return accessor_bytes:cast("uint16_t", accessor.count)
+      elseif accessor.type == "VEC4" then
+        return accessor_bytes:cast("UShort4", accessor.count)
+      else
+        assert(false, string.format("ushort:%s", accessor.type))
+      end
     elseif accessor.componentType == 5125 then
       -- int
       assert(accessor.type == "SCALAR")
@@ -249,6 +221,8 @@ function GltfReader:read_accessor_bytes(accessor_index)
         return accessor_bytes:cast("Float3", accessor.count)
       elseif accessor.type == "VEC4" then
         return accessor_bytes:cast("Float4", accessor.count)
+      elseif accessor.type == "MAT4" then
+        return accessor_bytes:cast("Mat4", accessor.count)
       else
         assert(false, "unknown type", accessor.componentType, accessor.type)
       end

@@ -41,7 +41,7 @@ end
 ---@param textures love.Texture[]
 ---@return lvrm.Material
 function Material.load(gltf_material, textures)
-  local shader = lvrm_shader.get "simple"
+  local shader = lvrm_shader.get "skinning"
   local material = Material.new(gltf_material.name, shader)
 
   local pbr = gltf_material.pbrMetallicRoughness
