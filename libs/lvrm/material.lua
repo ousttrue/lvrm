@@ -1,6 +1,6 @@
 require "falg"
 local ffi = require "ffi"
-local lvrm_shader = require "lvrm.shader"
+local Shader = require "lvrm.shader"
 
 local function make_texture()
   -- Create some buffer with size 2x2.
@@ -18,33 +18,33 @@ end
 
 ---@class lvrm.Material:lvrm.MaterialInstance
 local Material = {
-  GPU_SKINNING = true,
+  gpu_skinning = true,
 }
+Material.__index = Material
 
 ---@param name string
----@param shader love.Shader | string
+---@param shader_type lvrm.ShaderType
 ---@return lvrm.Material
-function Material.new(name, shader)
-  if type(shader) == "string" then
-    shader = lvrm_shader.get(shader)
-  end
-  assert(shader)
+function Material.new(name, shader_type)
+  -- if type(shader) == "string" then
+  --   shader = lvrm_shader.get(shader)
+  -- end
+  assert(shader_type)
   ---@class lvrm.MaterialInstance
   ---@field color_texture love.Texture?
   local instance = {
     name = name,
-    shader = shader,
+    shader = Shader.new(shader_type),
   }
   ---@type lvrm.Material
-  return setmetatable(instance, { __index = Material })
+  return setmetatable(instance, Material)
 end
 
 ---@param gltf_material gltf.Material
 ---@param textures love.Texture[]
 ---@return lvrm.Material
 function Material.load(gltf_material, textures)
-  local shader = lvrm_shader.get(Material.GPU_SKINNING and "skinning" or "simple")
-  local material = Material.new(gltf_material.name, shader)
+  local material = Material.new(gltf_material.name, Shader.ShaderType.Unlit)
 
   local pbr = gltf_material.pbrMetallicRoughness
   if pbr then
@@ -56,8 +56,9 @@ function Material.load(gltf_material, textures)
   return material
 end
 
-function Material:use()
-  love.graphics.setShader(self.shader)
+---@param skinning lvrm.Skinning?
+function Material:use(skinning)
+  self.shader:use(skinning, Material.gpu_skinning)
   love.graphics.setFrontFaceWinding "cw"
   love.graphics.setMeshCullMode "back"
   love.graphics.setDepthMode("lequal", true)
@@ -70,7 +71,7 @@ local M = love.data.newByteData(MAT4_SIZE)
 ---@param m falg.Mat4
 function Material:send_mat4(name, m)
   ffi.copy(M:getFFIPointer(), m, MAT4_SIZE)
-  self.shader:send(name, M, "column")
+  self.shader.lg_shader:send(name, M, "column")
 end
 
 return Material

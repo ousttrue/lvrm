@@ -23,7 +23,11 @@ end
 ---@param w integer
 ---@param h integer
 function RenderTarget:update_size(w, h)
-  if not self.colorcanvas or self.colorcanvas:getWidth() ~= w or self.colorcanvas:getHeight() ~= h then
+  if
+    not self.colorcanvas
+    or self.colorcanvas:getWidth() ~= w
+    or self.colorcanvas:getHeight() ~= h
+  then
     self.colorcanvas = love.graphics.newCanvas(w, h)
     self.depthcanvas = love.graphics.newCanvas(w, h, { format = "depth24" })
     self.width = w
@@ -37,7 +41,9 @@ function RenderTarget:render(render, info)
   -- update camera
   self.camera:update(self.width, self.height, info.isActive, info.isHovered)
   if self.last_target ~= info.target then
-    self.camera:fit(info.target:get_bb())
+    if info.target then
+      self.camera:fit(info.target:get_bb())
+    end
     self.last_target = info.target
   end
 

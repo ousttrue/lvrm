@@ -3,6 +3,7 @@ local ffi = require "ffi"
 local falg = require "falg"
 local VertexBuffer = require "lvrm.vertexbuffer"
 local Material = require "lvrm.material"
+local Shader = require "lvrm.shader"
 
 ---
 --- MorphTarget
@@ -306,7 +307,7 @@ function Mesh:draw(model, view, projection, submesh_num, skinning)
   for i, s in ipairs(self.submeshes) do
     if not submesh_num or i == submesh_num then
       if s.drawcount > 0 then
-        s.material:use()
+        s.material:use(skinning)
         if s.material.color_texture then
           self.lg_mesh:setTexture(s.material.color_texture)
         else
@@ -316,10 +317,6 @@ function Mesh:draw(model, view, projection, submesh_num, skinning)
         s.material:send_mat4("m_model", model)
         s.material:send_mat4("m_view", view)
         s.material:send_mat4("m_projection", projection)
-
-        if s.material.GPU_SKINNING and skinning then
-          skinning:send("joints_matrices", s.material.shader)
-        end
 
         self.lg_mesh:setDrawRange(s.start, s.drawcount)
         love.graphics.draw(self.lg_mesh)
