@@ -48,11 +48,11 @@ function Skinning:send(name, shader)
   shader:send(name, "column", self.buffer)
 end
 
-function Skinning:set_matrix(node, m)
-  local index = self.joint_map[node]
-  assert(index)
-  self.span.ptr[index] = m
-end
+-- function Skinning:set_matrix(node, m)
+--   local index = self.joint_map[node]
+--   assert(index)
+--   self.span.ptr[index] = m
+-- end
 
 ---@param nodes lvrm.Node[]
 function Skinning:update(nodes)
@@ -63,15 +63,12 @@ function Skinning:update(nodes)
 end
 
 ---@param v falg.Float3
----@param j integer
+---@param j integer 0origin
 ---@param w number
 ---@return falg.Float3
 function Skinning:calc(v, j, w)
   if w > 0 then
-    -- local node_index = self.joints[j]
-    -- assert(node_index)
-    local skining_matrix = self.span.ptr[j]
-    return skining_matrix:transform_position(v):scale(w)
+    return self.span.ptr[j]:transform_position(v):scale(w)
   else
     return falg.Float3(0, 0, 0)
   end

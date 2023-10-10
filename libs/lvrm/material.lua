@@ -18,7 +18,7 @@ end
 
 ---@class lvrm.Material:lvrm.MaterialInstance
 local Material = {
-  GPU_SKINNING = false,
+  GPU_SKINNING = true,
 }
 
 ---@param name string

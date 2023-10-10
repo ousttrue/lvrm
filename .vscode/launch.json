@@ -16,7 +16,8 @@
                 // "${env:GLTF_SAMPLE_MODELS}/2.0/Box/glTF-Binary/Box.glb",
                 // "${env:GLTF_SAMPLE_MODELS}/2.0/CesiumMilkTruck/glTF-Binary/CesiumMilkTruck.glb",
                 // "${env:GLTF_SAMPLE_MODELS}/2.0/AnimatedTriangle/glTF/AnimatedTriangle.gltf",
-                "${env:USERPROFILE}\\Desktop\\AliciaSolid_vrm-0.51.vrm",
+                "${env:GLTF_SAMPLE_MODELS}/2.0/RiggedSimple/glTF-Binary/RiggedSimple.glb",
+                // "${env:USERPROFILE}\\Desktop\\AliciaSolid_vrm-0.51.vrm",
             ]
         },
         {
