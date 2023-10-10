@@ -23,6 +23,8 @@ function Node.new(name)
     children = {},
     ---@type falg.EuclideanTransform
     local_transform = falg.EuclideanTransform.new(),
+
+    world_matrix = falg.Mat4.new_identity(),
   }
   ---@type lvrm.Node
   return setmetatable(instance, Node)
@@ -87,14 +89,10 @@ end
 ---@param parent falg.Mat4
 ---@param view falg.Mat4
 ---@param projection falg.Mat4
-function Node:draw_recursive(parent, view, projection)
-  local world = self:local_matrix() * parent
-  if self.mesh then
-    self.mesh:draw(world, view, projection, nil, self.skinning)
-  end
-
+function Node:update_recursive(parent, view, projection)
+  self.world_matrix = self:local_matrix() * parent
   for _, child in ipairs(self.children) do
-    child:draw_recursive(world, view, projection)
+    child:update_recursive(self.world_matrix, view, projection)
   end
 end
 

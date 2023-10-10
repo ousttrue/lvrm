@@ -21,6 +21,7 @@ position(mat4 transform_projection, vec4 vertex_position)
     VertexWeights.z * joints_matrices[int(VertexJoints.z)];
   skin_matrix +=
     VertexWeights.w * joints_matrices[int(VertexJoints.w)];
+  // mat4 skin_matrix = joints_matrices[int(VertexJoints.x)];
 
   vertex_position = skin_matrix * vertex_position;
 

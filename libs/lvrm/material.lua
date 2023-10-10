@@ -17,7 +17,9 @@ local function make_texture()
 end
 
 ---@class lvrm.Material:lvrm.MaterialInstance
-local Material = {}
+local Material = {
+  GPU_SKINNING = false,
+}
 
 ---@param name string
 ---@param shader love.Shader | string
@@ -41,7 +43,7 @@ end
 ---@param textures love.Texture[]
 ---@return lvrm.Material
 function Material.load(gltf_material, textures)
-  local shader = lvrm_shader.get "skinning"
+  local shader = lvrm_shader.get(Material.GPU_SKINNING and "skinning" or "simple")
   local material = Material.new(gltf_material.name, shader)
 
   local pbr = gltf_material.pbrMetallicRoughness

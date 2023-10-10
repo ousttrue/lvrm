@@ -1,4 +1,7 @@
 local ffi = require "ffi"
+
+local Float3 = require "falg.float3"
+
 ffi.cdef [[
 typedef struct {
   float _11, _12, _13, _14;
@@ -123,7 +126,7 @@ function Mat4.new_identity()
   return Mat4(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)
 end
 
----@param r falg.Mat4
+---@param r falg.Mat4|number
 function Mat4:__mul(r)
   local m = Mat4()
   m._11 = self._11 * r._11 + self._12 * r._21 + self._13 * r._31 + self._14 * r._41
@@ -276,6 +279,15 @@ end
 
 function Mat4.new_scale(x, y, z)
   return ffi.new("Mat4", x, 0, 0, 0, 0, y, 0, 0, 0, 0, z, 0, 0, 0, 0, 1)
+end
+
+---@param p falg.Float3
+---@return falg.Float3
+function Mat4:transform_position(p)
+  local x = p.X * self._11 + p.Y * self._21 + p.Z * self._31 + self._41
+  local y = p.X * self._12 + p.Y * self._22 + p.Z * self._32 + self._42
+  local z = p.X * self._13 + p.Y * self._23 + p.Z * self._33 + self._43
+  return Float3(x, y, z)
 end
 
 Mat4 = ffi.metatype("Mat4", Mat4)
