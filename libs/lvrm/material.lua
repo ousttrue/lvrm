@@ -18,7 +18,7 @@ end
 
 ---@class lvrm.Material:lvrm.MaterialInstance
 local Material = {
-  gpu_skinning = true,
+  GPU_SKINNING = true,
 }
 Material.__index = Material
 
@@ -58,7 +58,7 @@ end
 
 ---@param skinning lvrm.Skinning?
 function Material:use(skinning)
-  self.shader:use(skinning, Material.gpu_skinning)
+  self.shader:use(skinning, Material.GPU_SKINNING)
   love.graphics.setFrontFaceWinding "cw"
   love.graphics.setMeshCullMode "back"
   love.graphics.setDepthMode("lequal", true)

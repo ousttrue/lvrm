@@ -172,6 +172,7 @@ end
 ---@return Span
 function GltfReader:read_image_bytes(image_index)
   local image = self.root.images[image_index + 1] -- 1origin
+  assert(image.bufferView)
   return self:read_bufferview_bytes(image.bufferView)
 end
 

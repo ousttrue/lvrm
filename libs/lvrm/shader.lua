@@ -30,7 +30,7 @@ function Cache:get_source(vs_fs, shader_type, skinning_type)
   )
   local content = readfile(path)
   assert(content)
-  if skinning_type ~= Shader.SkinningType.None then
+  if skinning_type == Shader.SkinningType.Gpu then
     content = "#define USE_SKINNING 1\n\n" .. content
   end
   return content
