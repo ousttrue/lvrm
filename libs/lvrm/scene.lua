@@ -174,10 +174,20 @@ function Scene:set_time(seconds, loop, animation_selected)
   for _, curve in ipairs(active_animation.curves) do
     local node = self.nodes[curve.target.node + 1] --0to1origin
     if curve.target.path == "rotation" then
+      -- cast Float4 to Quat
+      local value = curve:from_time(seconds, "Quat")
+      if value then
+        node.local_transform.rotation = value
+      end
+    elseif curve.target.path == "translation" then
       local value = curve:from_time(seconds)
       if value then
-        -- Float4*
-        node.local_transform.rotation = falg.Quat(value.X, value.Y, value.Z, value.W)
+        node.local_transform.translation = value
+      end
+    elseif curve.target.path == "scale" then
+      local value = curve:from_time(seconds)
+      if value then
+        node.local_scale = value
       end
     else
       assert(false, curve.target.path, "not implemented")

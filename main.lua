@@ -68,19 +68,6 @@ end
 
 local STATE = State.new()
 
-local function setup_font(path)
-  local data = util.readfile(path)
-  if not data then
-    return
-  end
-
-  -- for love
-  local font = love.graphics.newFont(love.data.newByteData(data), 32)
-  if font then
-    love.graphics.setFont(font)
-  end
-end
-
 -- love.data.newByteData()
 love.load = function(args)
   imgui.love.Init "RGBA32" -- or imgui.love.Init("RGBA32") or imgui.love.Init("Alpha8")
@@ -91,14 +78,26 @@ love.load = function(args)
     io.ConfigFlags = bit.bor(io.ConfigFlags, imgui.ImGuiConfigFlags_DockingEnable)
   end
 
-  setup_font "C:/Windows/Fonts/meiryo.ttc"
+  local ja_font = "C:/Windows/Fonts/meiryo.ttc"
+  do
+    local data = util.readfile(ja_font)
+    if not data then
+      return
+    end
+    local font = love.graphics.newFont(love.data.newByteData(data), 32)
+    if font then
+      love.graphics.setFont(font)
+    end
+  end
 
-  local io = imgui.GetIO()
-  local font = UI.AddFont(0, "C:/Windows/Fonts/meiryo.ttc", 20, false, io.Fonts:GetGlyphRangesJapanese())
-  UI.AddFont(1, "C:/Windows/Fonts/Seguiemj.ttf", 15, true, ffi.new("uint32_t[3]", 0x1, 0x1FFFF, 0))
-  -- io.Fonts:Build()
-  io.FontDefault = font
-  imgui.love.BuildFontAtlas "RGBA32"
+  do
+    local io = imgui.GetIO()
+    local font = UI.AddFont(0, ja_font, 20, false, io.Fonts:GetGlyphRangesJapanese())
+    -- emoji
+    UI.AddFont(1, "C:/Windows/Fonts/Seguiemj.ttf", 15, true, ffi.new("uint32_t[3]", 0x1, 0x1FFFF, 0))
+    io.FontDefault = font
+    imgui.love.BuildFontAtlas "RGBA32"
+  end
 
   STATE:load(args[1])
 
@@ -173,7 +172,9 @@ love.load = function(args)
       end
 
       r:render(function(view, projection)
-        STATE.scene:draw(view, projection)
+        if STATE.scene then
+          STATE.scene:draw(view, projection)
+        end
       end, {
         isActive = isActive,
         isHovered = isHovered,

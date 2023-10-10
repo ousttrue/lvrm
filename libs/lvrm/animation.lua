@@ -26,13 +26,19 @@ function AnimationCurve.new(target, times, values)
 end
 
 ---@param i integer 0origin
+---@param t string? Float3, Quat..etc
 ---@retun ffi.cdata*
-function AnimationCurve:from_frame(i)
-  return self.values.ptr[i]
+function AnimationCurve:from_frame(i, cast_type)
+  if cast_type then
+    return ffi.cast(cast_type .. "*", self.values.ptr)[i]
+  else
+    return self.values.ptr[i]
+  end
 end
 
 ---@param seconds number
-function AnimationCurve:from_time(seconds)
+---@param t string? Float3, Quat..etc
+function AnimationCurve:from_time(seconds, cast_type)
   assert(seconds)
   if seconds < self.t0 then
     return self.values.ptr[0]
@@ -42,7 +48,7 @@ function AnimationCurve:from_time(seconds)
     local t = self.times.ptr[i]
     assert(t)
     if t >= seconds then
-      local value = self:from_frame(i)
+      local value = self:from_frame(i, cast_type)
       return value
     end
   end

@@ -14,7 +14,7 @@ function EuclideanTransform.new(t, r)
   ---@field translation falg.Float3?
   ---@field rotation falg.Quat?
   local instance = {
-    tranlsation = t,
+    translation = t,
     rotation = r,
   }
   ---@type falg.EuclideanTransform

@@ -10,6 +10,11 @@ typedef struct {
 } Quat;
 ]]
 
+---@return falg.Quat
+function Quat.new_identity()
+  return Quat(0, 0, 0, 1)
+end
+
 ---@type falg.Quat
 Quat = ffi.metatype("Quat", Quat)
 

@@ -39,7 +39,7 @@ function AnimationGui:show_animation(n, animation)
   -- num
   imgui.TableNextColumn()
   local flags = util.make_node_flags { is_leaf = false, is_selected = n == self.selected }
-  imgui.SetNextItemOpen(true, imgui.ImGuiCond_FirstUseEver)
+  -- imgui.SetNextItemOpen(true, imgui.ImGuiCond_FirstUseEver)
   local node_open = imgui.TreeNodeEx_Ptr(animation.id, flags, string.format("%d", n))
   if imgui.IsItemClicked() and not imgui.IsItemToggledOpen() then
     self.selected = n

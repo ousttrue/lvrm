@@ -43,8 +43,11 @@ function Node.load(gltf_node, default_name)
   local node = Node.new(gltf_node.name and gltf_node.name or default_name)
 
   if gltf_node.matrix then
-    assert(false, "decompose")
-    -- node.local_matrix:set_array(gltf_node.matrix)
+    local m = falg.Mat4(unpack(gltf_node.matrix))
+    local t, r, s = m:decompose()
+    node.local_transform.translation = t
+    node.local_transform.rotation = r
+    node.local_scale = s
   else
     if gltf_node.translation then
       node.local_transform.translation = falg.Float3(unpack(gltf_node.translation))
