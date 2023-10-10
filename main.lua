@@ -19,6 +19,8 @@ local AnimationGui = require "ui.animation"
 local ShowJson = require "ui.gltf_json"
 local ShowScene = require "ui.scene"
 local ShowTime = require "ui.time"
+local Logger = require "ui.logger"
+local logging = require "logging"
 
 local util = require "lvrm.util"
 local Scene = require "lvrm.scene"
@@ -47,6 +49,7 @@ function State:load(path)
   if not path then
     return
   end
+  logging.info("load %s...", path)
   local reader = lvrm_reader.read_from_path(path)
   if reader then
     self.scene = nil
@@ -144,6 +147,13 @@ love.load = function(args)
     end)
     :no_padding()
 
+  local logger = Logger.new()
+  STATE.docking_space
+    :add("logger", function()
+      logger:show()
+    end)
+    :no_padding()
+
   local gltf_sample_models = os.getenv "GLTF_SAMPLE_MODELS"
   if gltf_sample_models then
     local asset = AssetViewer.new(gltf_sample_models .. "/2.0")
@@ -190,6 +200,8 @@ love.load = function(args)
 end
 
 love.draw = function()
+  imgui.NewFrame()
+
   local io = imgui.GetIO()
   STATE.time:update(io.DeltaTime)
   STATE:draw()
@@ -201,56 +213,35 @@ end
 
 love.update = function(dt)
   imgui.love.Update(dt)
-  imgui.NewFrame()
 end
 
 love.mousemoved = function(x, y, ...)
   imgui.love.MouseMoved(x, y)
-  if not imgui.love.GetWantCaptureMouse() then
-    -- your code here
-  end
 end
 
 love.mousepressed = function(x, y, button, ...)
   imgui.love.MousePressed(button)
-  if not imgui.love.GetWantCaptureMouse() then
-    -- your code here
-  end
 end
 
 love.mousereleased = function(x, y, button, ...)
   imgui.love.MouseReleased(button)
-  if not imgui.love.GetWantCaptureMouse() then
-    -- your code here
-  end
 end
 
 love.wheelmoved = function(x, y)
+  logging.debug("wheel: %f, %f", x, y)
   imgui.love.WheelMoved(x, y)
-  if not imgui.love.GetWantCaptureMouse() then
-    -- your code here
-  end
 end
 
 love.keypressed = function(key, ...)
   imgui.love.KeyPressed(key)
-  if not imgui.love.GetWantCaptureKeyboard() then
-    -- your code here
-  end
 end
 
 love.keyreleased = function(key, ...)
   imgui.love.KeyReleased(key)
-  if not imgui.love.GetWantCaptureKeyboard() then
-    -- your code here
-  end
 end
 
 love.textinput = function(t)
   imgui.love.TextInput(t)
-  if imgui.love.GetWantCaptureKeyboard() then
-    -- your code here
-  end
 end
 
 love.quit = function()
@@ -258,7 +249,6 @@ love.quit = function()
 end
 
 -- for gamepad support also add the following:
-
 love.joystickadded = function(joystick)
   imgui.love.JoystickAdded(joystick)
   -- your code here
