@@ -7,6 +7,7 @@ add_package_path "libs"
 local ffi = require "ffi"
 local glfw = require "glfw"
 local gl = require "gl"
+local stb_image = require "stb_image"
 
 ffi.cdef [[
 typedef struct {
@@ -133,11 +134,7 @@ local function main()
   local buffer = ffi.new("char[?]", 4 * width * height)
   gl.glReadPixels(0, 0, width, height, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, buffer)
 
-  local w = io.open("offscreen.raw", "wb")
-  if w then
-    w:write(ffi.string(buffer, ffi.sizeof(buffer)))
-    w:close()
-  end
+  stb_image.stbi_write_png("offscreen.png", width, height, 4, buffer, width * 4)
 
   glfw.terminate()
 end
