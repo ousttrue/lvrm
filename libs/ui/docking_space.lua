@@ -12,7 +12,7 @@ Dock.__index = Dock
 
 ---@param name string
 ---@param draw function
----@param include_begin boolean
+---@param include_begin boolean?
 ---@return Dock
 function Dock.new(name, draw, include_begin)
   ---@class DockInstance

@@ -18,7 +18,7 @@ end
 
 ---@class lvrm.Material:lvrm.MaterialInstance
 local Material = {
-  GPU_SKINNING = true,
+  GPU_SKINNING = false,
 }
 Material.__index = Material
 

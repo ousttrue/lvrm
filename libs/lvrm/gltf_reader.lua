@@ -125,7 +125,8 @@ local type_count_map = {
 ---@param accessor gltf.Accessor
 ---@return integer
 local function get_item_size(accessor)
-  return component_type_size_map[accessor.componentType] * type_count_map[accessor.type]
+  return component_type_size_map[accessor.componentType]
+    * type_count_map[accessor.type]
 end
 
 ---@param buffer_index integer 0 origin
@@ -152,7 +153,7 @@ function GltfReader:get_buffer(buffer_index)
 end
 
 ---@param bufferview_index integer 0 origin
----@return Span
+---@return lvrm.Span
 function GltfReader:read_bufferview_bytes(bufferview_index)
   assert(bufferview_index)
   local buffer_view = self.root.bufferViews[bufferview_index + 1] -- 1origin
@@ -169,7 +170,7 @@ function GltfReader:read_bufferview_bytes(bufferview_index)
 end
 
 ---@param image_index integer 0 origin
----@return Span
+---@return lvrm.Span
 function GltfReader:read_image_bytes(image_index)
   local image = self.root.images[image_index + 1] -- 1origin
   assert(image.bufferView)
@@ -177,14 +178,14 @@ function GltfReader:read_image_bytes(image_index)
 end
 
 ---@param accessor_index integer 0 origin
----@return Span
+---@return lvrm.Span
 function GltfReader:read_accessor_bytes(accessor_index)
   local accessor = self.root.accessors[accessor_index + 1] -- 1origin
 
   if accessor.sparse then
     assert(false, "sparse not impl")
   else
-    ---@type Span
+    ---@type lvrm.Span
     local bufferview_bytes = self:read_bufferview_bytes(accessor.bufferView)
     assert(bufferview_bytes)
 
@@ -196,7 +197,8 @@ function GltfReader:read_accessor_bytes(accessor_index)
     local accessor_item_size = get_item_size(accessor)
     local accessor_length = accessor.count * accessor_item_size
     assert(accessor_length)
-    local accessor_bytes = bufferview_bytes:subspan(accessor_offset, accessor_length)
+    local accessor_bytes =
+      bufferview_bytes:subspan(accessor_offset, accessor_length)
 
     -- return accessor_bytes
     if accessor.componentType == 5123 then

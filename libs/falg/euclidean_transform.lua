@@ -24,21 +24,22 @@ end
 ---@return falg.Mat4
 function EuclideanTransform:matrix()
   ---@type falg.Mat4
-  local m = Mat4()
+  local m
   if self.rotation then
-    ---@type falg.Quat
-    local q = self.rotation
-    m:from_quat(q.X, q.Y, q.Z, q.W)
+    m = Mat4.new_quat(
+      self.rotation.X,
+      self.rotation.Y,
+      self.rotation.Z,
+      self.rotation.W
+    )
   else
     m = Mat4.new_identity()
   end
 
   if self.translation then
-    ---@type falg.Float3
-    local t = self.translation
-    m._41 = t.X
-    m._42 = t.Y
-    m._43 = t.Z
+    m._41 = self.translation.X
+    m._42 = self.translation.Y
+    m._43 = self.translation.Z
   end
   return m
 end

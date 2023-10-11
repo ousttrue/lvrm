@@ -125,7 +125,7 @@ function Splitter:SplitVertical(size)
     self.size1 = ffi.new("float[1]", size[1] * 0.5)
   end
   self.size2[0] = size[1] - self.size1[0] - 5
-  split(true, 5.0, self.size1, self.size2, 100, 100)
+  split(true, 5.0, self.size1, self.size2, 1, 1)
   return self.size1[0], self.size2[0]
 end
 

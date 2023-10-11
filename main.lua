@@ -3,7 +3,11 @@ if os.getenv "LOCAL_LUA_DEBUGGER_VSCODE" == "1" then
 end
 
 package.path = package.cpath
-  .. string.format(";%s\\libs\\?.lua;%s\\libs\\?\\init.lua", love.filesystem.getSource(), love.filesystem.getSource())
+  .. string.format(
+    ";%s\\libs\\?.lua;%s\\libs\\?\\init.lua",
+    love.filesystem.getSource(),
+    love.filesystem.getSource()
+  )
 
 local ffi = require "ffi"
 local falg = require "falg"
@@ -21,6 +25,7 @@ local ShowScene = require "ui.scene"
 local ShowTime = require "ui.time"
 local Logger = require "ui.logger"
 local logging = require "logging"
+local Skin = require "ui.skin"
 
 local util = require "lvrm.util"
 local Scene = require "lvrm.scene"
@@ -39,6 +44,9 @@ function State.new()
     time = Time.new(),
     mesh = MeshGui.new(),
     animation = AnimationGui.new(),
+    logger = Logger.new(),
+    skin = Skin.new(),
+    scene_ui = require("ui.scene").new(),
   }
   ---@type State
   return setmetatable(instance, State)
@@ -78,7 +86,8 @@ love.load = function(args)
   do
     local io = imgui.GetIO()
     -- Enable Docking
-    io.ConfigFlags = bit.bor(io.ConfigFlags, imgui.ImGuiConfigFlags_DockingEnable)
+    io.ConfigFlags =
+      bit.bor(io.ConfigFlags, imgui.ImGuiConfigFlags_DockingEnable)
   end
 
   local ja_font = "C:/Windows/Fonts/meiryo.ttc"
@@ -95,9 +104,16 @@ love.load = function(args)
 
   do
     local io = imgui.GetIO()
-    local font = UI.AddFont(0, ja_font, 20, false, io.Fonts:GetGlyphRangesJapanese())
+    local font =
+      UI.AddFont(0, ja_font, 20, false, io.Fonts:GetGlyphRangesJapanese())
     -- emoji
-    UI.AddFont(1, "C:/Windows/Fonts/Seguiemj.ttf", 15, true, ffi.new("uint32_t[3]", 0x1, 0x1FFFF, 0))
+    UI.AddFont(
+      1,
+      "C:/Windows/Fonts/Seguiemj.ttf",
+      15,
+      true,
+      ffi.new("uint32_t[3]", 0x1, 0x1FFFF, 0)
+    )
     io.FontDefault = font
     imgui.love.BuildFontAtlas "RGBA32"
   end
@@ -112,13 +128,13 @@ love.load = function(args)
 
   STATE.docking_space
     :add("scene", function()
-      ShowScene(STATE.scene)
+      STATE.scene_ui:ShowScene(STATE.scene)
     end)
     :no_padding()
 
   STATE.docking_space
     :add("error", function()
-      imgui.TextUnformatted "🌻"
+      imgui.TextUnformatted "emoji: 🌻"
       if STATE.error then
         imgui.TextWrapped(STATE.error)
       end
@@ -132,8 +148,8 @@ love.load = function(args)
     :no_padding()
 
   STATE.docking_space
-    :add("animation", function()
-      STATE.animation:ShowAnimation(STATE.scene)
+    :add("selected_mesh", function()
+      STATE.mesh:ShowSelected(STATE.scene)
     end)
     :no_padding()
 
@@ -142,15 +158,20 @@ love.load = function(args)
   end)
 
   STATE.docking_space
-    :add("selected_mesh", function()
-      STATE.mesh:ShowSelected(STATE.scene)
+    :add("animation", function()
+      STATE.animation:ShowAnimation(STATE.scene)
     end)
     :no_padding()
 
-  local logger = Logger.new()
+  STATE.docking_space
+    :add("skin", function()
+      STATE.skin:ShowSkin(STATE.scene)
+    end)
+    :no_padding()
+
   STATE.docking_space
     :add("logger", function()
-      logger:show()
+      STATE.logger:show()
     end)
     :no_padding()
 
@@ -174,11 +195,16 @@ love.load = function(args)
       -- update canvas size
       local size = imgui.GetContentRegionAvail()
       r:update_size(size.x, size.y)
-      local isActive, isHovered = UI.DraggableImage("image_button", r.colorcanvas, size)
+      local isActive, isHovered =
+        UI.DraggableImage("image_button", r.colorcanvas, size)
 
       -- render scene to rendertarget
       if STATE.scene and STATE.animation.selected then
-        STATE.scene:set_time(STATE.time.seconds, STATE.time.loop[0], STATE.animation.selected)
+        STATE.scene:set_time(
+          STATE.time.seconds,
+          STATE.time.loop[0],
+          STATE.animation.selected
+        )
       end
 
       r:render(function(view, projection)

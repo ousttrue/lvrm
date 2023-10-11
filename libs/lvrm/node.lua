@@ -30,14 +30,22 @@ function Node.new(name)
   return setmetatable(instance, Node)
 end
 
+---@return string
+function Node:__tostring()
+  return string.format("{%s}", self.name)
+end
+
 ---@retun falg.Mat4
 function Node:local_matrix()
   local m = self.local_transform:matrix()
   if self.local_scale then
-    return falg.Mat4.new_scale(self.local_scale.X, self.local_scale.Y, self.local_scale.Z)
-  else
-    return m
+    m = falg.Mat4.new_scale(
+      self.local_scale.X,
+      self.local_scale.Y,
+      self.local_scale.Z
+    ) * m
   end
+  return m
 end
 
 ---@param gltf_node gltf.Node
@@ -54,13 +62,18 @@ function Node.load(gltf_node, default_name)
     node.local_scale = s
   else
     if gltf_node.translation then
-      node.local_transform.translation = falg.Float3(unpack(gltf_node.translation))
+      node.local_transform.translation =
+        falg.Float3(unpack(gltf_node.translation))
     end
     if gltf_node.rotation then
       node.local_transform.rotation = falg.Quat(unpack(gltf_node.rotation))
     end
     if gltf_node.scale then
-      if gltf_node.scale[1] ~= 1 or gltf_node.scale[2] ~= 1 or gltf_node.scale[3] ~= 1 then
+      if
+        gltf_node.scale[1] ~= 1
+        or gltf_node.scale[2] ~= 1
+        or gltf_node.scale[3] ~= 1
+      then
         node.local_scale = falg.Float3(unpack(gltf_node.scale))
       end
     end
@@ -89,23 +102,17 @@ function Node:add_child(child)
   child.parent = self
 end
 
----@param parent falg.Mat4
----@param view falg.Mat4
----@param projection falg.Mat4
-function Node:update_recursive(parent, view, projection)
-  self.world_matrix = self:local_matrix() * parent
-  for _, child in ipairs(self.children) do
-    child:update_recursive(self.world_matrix, view, projection)
-  end
-end
-
+---@param callback fun(Node)?
 ---@param parent_matrix falg.Mat4
----@param callback fun(lvrm.Node, falg.Mat4)
 function Node:calc_world_matrix(parent_matrix, callback)
-  local world = parent_matrix * self:local_matrix()
-  callback(self, world)
+  self.world_matrix = self:local_matrix() * parent_matrix
+  if callback then
+    callback(self)
+  else
+    local a = 0
+  end
   for _, child in ipairs(self.children) do
-    child:calc_world_matrix(world, callback)
+    child:calc_world_matrix(self.world_matrix, callback)
   end
 end
 

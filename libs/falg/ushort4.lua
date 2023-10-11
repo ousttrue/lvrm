@@ -10,6 +10,11 @@ typedef struct {
 } UShort4;
 ]]
 
+---@return string
+function UShort4:__tostring()
+  return string.format("[%d, %d, %d, %d]", self.X, self.Y, self.Z, self.W)
+end
+
 ---@type falg.UShort4
 UShort4 = ffi.metatype("UShort4", UShort4)
 

@@ -100,13 +100,29 @@ function Scene.load(reader)
     end
   end
 
+  -- skin
+  if reader.root.skins then
+    for i, gltf_skin in ipairs(reader.root.skins) do
+      local inversed_bind_data =
+        reader:read_accessor_bytes(gltf_skin.inverseBindMatrices)
+      local skin = Skinning.load(gltf_skin, inversed_bind_data)
+      table.insert(scene.skins, skin)
+    end
+  end
+
   -- nodes
   if reader.root.nodes then
     for i, gltf_node in ipairs(reader.root.nodes) do
       local node = Node.load(gltf_node, string.format("__node__:02d", i))
 
+      -- mesh
       if gltf_node.mesh then
         node.mesh = scene.meshes[gltf_node.mesh + 1] --0to1origin
+      end
+
+      -- skin
+      if gltf_node.skin then
+        node.skinning = scene.skins[gltf_node.skin + 1] -- 0to1 origin
       end
 
       table.insert(scene.nodes, node)
@@ -128,21 +144,6 @@ function Scene.load(reader)
       if not node.parent then
         table.insert(scene.root_nodes, node)
       end
-    end
-  end
-
-  -- skin
-  if reader.root.skins then
-    for i, gltf_skin in ipairs(reader.root.skins) do
-      local inversed_bind_data = reader:read_accessor_bytes(gltf_skin.inverseBindMatrices)
-      local skin = Skinning.load(gltf_skin, scene.nodes, inversed_bind_data)
-      table.insert(scene.skins, skin)
-    end
-  end
-
-  for i, gltf_node in ipairs(reader.root.nodes) do
-    if gltf_node.skin then
-      scene.nodes[i].skinning = scene.skins[gltf_node.skin + 1] -- 0to1 origin
     end
   end
 
@@ -169,7 +170,7 @@ end
 function Scene:draw(view, projection)
   -- update world matrix
   for _, n in ipairs(self.root_nodes) do
-    n:update_recursive(falg.Mat4.new_identity(), view, projection)
+    n:calc_world_matrix(falg.Mat4.new_identity())
   end
   -- update skinning matrix
   for i, skin in ipairs(self.skins) do
@@ -231,8 +232,8 @@ function Scene:get_bb()
     root:calc_world_matrix(
       falg.Mat4.new_identity(),
       ---@param node lvrm.Node
-      ---@param m falg.Mat4
-      function(node, m)
+      function(node)
+        local m = node.world_matrix
         if node.mesh then
           local mesh_aabb = node.mesh:get_bb()
           mesh_aabb.min = m:apply_point(mesh_aabb.min)
