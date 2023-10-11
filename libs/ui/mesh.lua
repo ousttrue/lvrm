@@ -7,6 +7,7 @@ local falg = require "falg"
 local util = require "ui.util"
 local VertexBuffer = require "lvrm.vertexbuffer"
 local UI = require "ui"
+local RenderTarget = require "lvrm.rendertarget"
 
 ---@class MeshGui: MeshGuiInstance
 local MeshGui = {}
@@ -36,7 +37,10 @@ function MeshGui:show_prim(root, m, n)
   imgui.TableNextRow()
   -- name
   imgui.TableNextColumn()
-  local flags = util.make_node_flags { is_leaf = true, is_selected = (m == self.mesh and n == self.prim) }
+  local flags = util.make_node_flags {
+    is_leaf = true,
+    is_selected = (m == self.mesh and n == self.prim),
+  }
   local gltf_prim = gltf_mesh.primitives[n]
   local material_name = "__no_material__"
   if gltf_prim.material then
@@ -45,8 +49,11 @@ function MeshGui:show_prim(root, m, n)
       material_name = "__no_material_name__"
     end
   end
-  local node_open =
-    imgui.TreeNodeEx_StrStr(string.format("##__prim__%d", n), flags, string.format("%02d:%s", n, material_name))
+  local node_open = imgui.TreeNodeEx_StrStr(
+    string.format("##__prim__%d", n),
+    flags,
+    string.format("%02d:%s", n, material_name)
+  )
   if imgui.IsItemClicked() and not imgui.IsItemToggledOpen() then
     self.mesh = m
     self.prim = n
@@ -83,9 +90,13 @@ function MeshGui:show_mesh(root, m, mesh)
   imgui.TableNextRow()
   -- name
   imgui.TableNextColumn()
-  local flags = util.make_node_flags { is_leaf = false, is_selected = (m == self.mesh and self.prim == nil) }
+  local flags = util.make_node_flags {
+    is_leaf = false,
+    is_selected = (m == self.mesh and self.prim == nil),
+  }
   imgui.SetNextItemOpen(true, imgui.ImGuiCond_FirstUseEver)
-  local node_open = imgui.TreeNodeEx_Ptr(mesh.id, flags, "%s", gltf_mesh.name or "__no_name__")
+  local node_open =
+    imgui.TreeNodeEx_Ptr(mesh.id, flags, "%s", gltf_mesh.name or "__no_name__")
   local new_select = false
   if imgui.IsItemClicked() and not imgui.IsItemToggledOpen() then
     self.mesh = m
@@ -119,11 +130,15 @@ function MeshGui:ShowMesh(root, scene)
   if not root or not scene then
     return
   end
-  util.show_table("sceneTreeTable", { "mesh/maerial name", "vertices", "indices", "morph" }, function()
-    for m, mesh in ipairs(scene.meshes) do
-      self:show_mesh(root, m, mesh)
+  util.show_table(
+    "sceneTreeTable",
+    { "mesh/maerial name", "vertices", "indices", "morph" },
+    function()
+      for m, mesh in ipairs(scene.meshes) do
+        self:show_mesh(root, m, mesh)
+      end
     end
-  end)
+  )
 end
 
 ---@param scene lvrm.Scene
@@ -149,17 +164,30 @@ function MeshGui:show_morph_targets(scene)
       if prim then
         -- name
         imgui.TableNextColumn()
-        if imgui.Selectable_Bool(string.format("%s:%d", mesh.name, self.prim), is_selected) then
+        if
+          imgui.Selectable_Bool(
+            string.format("%s:%d", mesh.name, self.prim),
+            is_selected
+          )
+        then
           self.morph = 0
         end
 
         -- range
         imgui.TableNextColumn()
-        imgui.TextUnformatted(string.format("%d-%d", prim.start - 1, prim.start - 1 + prim.drawcount))
+        imgui.TextUnformatted(
+          string.format(
+            "%d-%d",
+            prim.start - 1,
+            prim.start - 1 + prim.drawcount
+          )
+        )
       else
         -- name
         imgui.TableNextColumn()
-        if imgui.Selectable_Bool(string.format("%s", mesh.name), is_selected) then
+        if
+          imgui.Selectable_Bool(string.format("%s", mesh.name), is_selected)
+        then
           self.morph = 0
         end
 
@@ -230,17 +258,37 @@ function MeshGui:show_vertex_table(scene)
   local prim = mesh.submeshes[self.prim]
   if self.morph == 0 then
     if prim then
-      self:show_vertexbuffer(mesh.vertexbuffer, mesh.indexbuffer, prim.start - 1, prim.drawcount)
+      self:show_vertexbuffer(
+        mesh.vertexbuffer,
+        mesh.indexbuffer,
+        prim.start - 1,
+        prim.drawcount
+      )
     else
-      self:show_vertexbuffer(mesh.vertexbuffer, mesh.indexbuffer, 0, mesh.index_count)
+      self:show_vertexbuffer(
+        mesh.vertexbuffer,
+        mesh.indexbuffer,
+        0,
+        mesh.index_count
+      )
     end
   else
     local t = mesh.morphtargets[self.morph]
     if t then
       if prim then
-        self:show_vertexbuffer(t.vertexbuffer, mesh.indexbuffer, prim.start - 1, prim.drawcount)
+        self:show_vertexbuffer(
+          t.vertexbuffer,
+          mesh.indexbuffer,
+          prim.start - 1,
+          prim.drawcount
+        )
       else
-        self:show_vertexbuffer(t.vertexbuffer, mesh.indexbuffer, 0, mesh.index_count)
+        self:show_vertexbuffer(
+          t.vertexbuffer,
+          mesh.indexbuffer,
+          0,
+          mesh.index_count
+        )
       end
     end
   end
@@ -251,7 +299,8 @@ function MeshGui:render_selected(scene)
   -- update canvas size
   local size = imgui.GetContentRegionAvail()
   self.render_texture:update_size(size.x, size.y)
-  local isActive, isHovered = UI.DraggableImage("image_button", self.render_texture.colorcanvas, size)
+  local isActive, isHovered =
+    UI.DraggableImage("image_button", self.render_texture.colorcanvas, size)
 
   if not self.mesh then
     return

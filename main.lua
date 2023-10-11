@@ -11,27 +11,15 @@ package.path = package.cpath
 
 local ffi = require "ffi"
 local falg = require "falg"
-local lvrm_reader = require "lvrm.gltf_reader"
-local RenderTarget = require "lvrm.rendertarget"
-local Time = require "lvrm.time"
-
-local UI = require "ui"
-local DockingSpace = require "ui.docking_space"
-local AssetViewer = require "ui.assetviewer"
-local MeshGui = require "ui.mesh"
-local AnimationGui = require "ui.animation"
-local ShowJson = require "ui.gltf_json"
-local ShowScene = require "ui.scene"
-local ShowTime = require "ui.time"
-local Logger = require "ui.logger"
 local logging = require "logging"
-local Skin = require "ui.skin"
+local UI = require "ui"
 
-local util = require "lvrm.util"
-local Scene = require "lvrm.scene"
 ---@class cimgui
 local imgui = require "cimgui"
 
+---
+--- State
+---
 ---@class State: StateInstance
 local State = {}
 State.__index = State
@@ -40,13 +28,14 @@ State.__index = State
 function State.new()
   ---@class StateInstance
   local instance = {
-    docking_space = DockingSpace.new "DOCKSPACE",
-    time = Time.new(),
-    mesh = MeshGui.new(),
-    animation = AnimationGui.new(),
-    logger = Logger.new(),
-    skin = Skin.new(),
+    docking_space = require("ui.docking_space").new "DOCKSPACE",
+    time = require("lvrm.time").new(),
+    mesh = require("ui.mesh").new(),
+    animation = require("ui.animation").new(),
+    logger = require("ui.logger").new(),
+    skin = require("ui.skin").new(),
     scene_ui = require("ui.scene").new(),
+    renderer = require("lvrm.rendertarget").new(),
   }
   ---@type State
   return setmetatable(instance, State)
@@ -58,11 +47,13 @@ function State:load(path)
     return
   end
   logging.info("load %s...", path)
+  local lvrm_reader = require "lvrm.gltf_reader"
   local reader = lvrm_reader.read_from_path(path)
   if reader then
     self.scene = nil
     self.error = nil
     self.json_root = reader.root
+    local Scene = require "lvrm.scene"
     local ok, result = pcall(Scene.load, reader)
     if ok then
       self.scene = result
@@ -92,6 +83,7 @@ love.load = function(args)
 
   local ja_font = "C:/Windows/Fonts/meiryo.ttc"
   do
+    local util = require "lvrm.util"
     local data = util.readfile(ja_font)
     if not data then
       return
@@ -120,6 +112,7 @@ love.load = function(args)
 
   STATE:load(args[1])
 
+  local ShowJson = require "ui.gltf_json"
   STATE.docking_space
     :add("glTF", function()
       ShowJson(STATE.json_root)
@@ -153,6 +146,7 @@ love.load = function(args)
     end)
     :no_padding()
 
+  local ShowTime = require "ui.time"
   STATE.docking_space:add("time", function()
     ShowTime(STATE.time)
   end)
@@ -177,6 +171,7 @@ love.load = function(args)
 
   local gltf_sample_models = os.getenv "GLTF_SAMPLE_MODELS"
   if gltf_sample_models then
+    local AssetViewer = require "ui.assetviewer"
     local asset = AssetViewer.new(gltf_sample_models .. "/2.0")
 
     STATE.docking_space
@@ -189,14 +184,13 @@ love.load = function(args)
       :no_padding()
   end
 
-  local r = RenderTarget.new()
   STATE.docking_space
     :add("3d view", function()
       -- update canvas size
       local size = imgui.GetContentRegionAvail()
-      r:update_size(size.x, size.y)
+      STATE.renderer:update_size(size.x, size.y)
       local isActive, isHovered =
-        UI.DraggableImage("image_button", r.colorcanvas, size)
+        UI.DraggableImage("image_button", STATE.renderer.colorcanvas, size)
 
       -- render scene to rendertarget
       if STATE.scene and STATE.animation.selected then
@@ -207,7 +201,7 @@ love.load = function(args)
         )
       end
 
-      r:render(function(view, projection)
+      STATE.renderer:render(function(view, projection)
         if STATE.scene then
           STATE.scene:draw(view, projection)
         end
