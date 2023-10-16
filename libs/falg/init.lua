@@ -6,6 +6,8 @@
 ---   * https://luajit.org/ext_ffi_semantics.html
 
 return {
+  ---@type falg.UByte4
+  UByte4 = require "falg.ubyte4",
   ---@type falg.UShort4
   UShort4 = require "falg.ushort4",
   ---@type falg.Float2

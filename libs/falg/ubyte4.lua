@@ -1,25 +1,25 @@
----@class falg.UShort4
+---@class falg.UByte4
 ---@field X integer
 ---@field Y integer
 ---@field Z integer
 ---@field W integer
-local UShort4 = {}
-UShort4.__index = UShort4
+local UByte4 = {}
+UByte4.__index = UByte4
 
 local ffi = require "ffi"
 ffi.cdef [[
 typedef struct {
-  uint16_t X, Y, Z, W;
+  uint8_t X, Y, Z, W;
 
-} UShort4;
+} UByte4;
 ]]
 
 ---@return string
-function UShort4:__tostring()
+function UByte4:__tostring()
   return string.format("[%d, %d, %d, %d]", self.X, self.Y, self.Z, self.W)
 end
 
----@type falg.UShort4
-UShort4 = ffi.metatype("UShort4", UShort4)
+---@type falg.UByte4
+UByte4 = ffi.metatype("UByte4", UByte4)
 
-return UShort4
+return UByte4

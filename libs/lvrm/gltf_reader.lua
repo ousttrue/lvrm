@@ -201,14 +201,16 @@ function GltfReader:read_accessor_bytes(accessor_index)
       bufferview_bytes:subspan(accessor_offset, accessor_length)
 
     -- return accessor_bytes
-    if accessor.componentType == 5123 then
+    if accessor.componentType == 5121 then
+      if accessor.type == "VEC4" then
+        return accessor_bytes:cast("UByte4", accessor.count)
+      end
+    elseif accessor.componentType == 5123 then
       -- uint16_t
       if accessor.type == "SCALAR" then
         return accessor_bytes:cast("uint16_t", accessor.count)
       elseif accessor.type == "VEC4" then
         return accessor_bytes:cast("UShort4", accessor.count)
-      else
-        assert(false, string.format("ushort:%s", accessor.type))
       end
     elseif accessor.componentType == 5125 then
       -- int
@@ -226,12 +228,16 @@ function GltfReader:read_accessor_bytes(accessor_index)
         return accessor_bytes:cast("Float4", accessor.count)
       elseif accessor.type == "MAT4" then
         return accessor_bytes:cast("Mat4", accessor.count)
-      else
-        assert(false, "unknown type", accessor.componentType, accessor.type)
       end
-    else
-      assert(false, "unknown type", accessor.componentType)
     end
+    assert(
+      false,
+      string.format(
+        "unknown type: %s:%s",
+        accessor.componentType,
+        accessor.type
+      )
+    )
   end
 end
 
